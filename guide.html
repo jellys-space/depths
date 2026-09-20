@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Installation and setup guide for the Depths & Beyond modded Minecraft SMP.">
+  <meta name="theme-color" content="#14160f">
+  <title>Guide — Depths &amp; Beyond</title>
+
+  <meta property="og:title" content="Depths & Beyond — Guide">
+  <meta property="og:description" content="Installation and setup guide for the Depths & Beyond modded Minecraft SMP.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://depths.jellys-space.vip/guide.html">
+  <meta property="og:image" content="https://depths.jellys-space.vip/assets/images/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="discord:component-embed" type="application/json" href="https://depths.jellys-space.vip/discord-embed.json">
+  <link rel="icon" type="image/png" href="assets/images/icon.png">
+  <link rel="stylesheet" href="assets/css/site.css">
+  <script>
+    try {
+      const savedTheme = localStorage.getItem('depths-theme');
+      if (savedTheme === 'light' || savedTheme === 'dark') document.documentElement.dataset.theme = savedTheme;
+    } catch (_) {}
+  </script>
+  <script defer src="assets/js/site.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-shell">
+      <a class="brand" href="index.html" aria-label="Depths & Beyond home">
+        <img src="assets/images/icon.png" width="64" height="64" alt="">
+        <span class="brand-text">Depths &amp; Beyond</span>
+      </a>
+      <button class="mobile-menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation">☰</button>
+      <nav class="site-nav" id="site-nav" data-site-nav aria-label="Main navigation">
+        <a class="nav-link" href="index.html">Home</a>
+        <a class="nav-link" href="faq.html">FAQ</a>
+        <a class="nav-link" href="guide.html" aria-current="page">Guide</a>
+        <a class="nav-link" href="request-access.html">Request Access</a>
+      </nav>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to light theme" title="Switch to light theme">
+        <span class="theme-icon" data-theme-icon aria-hidden="true">☀</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main">
+    <header class="page-hero">
+      <div class="page-shell">
+        <p class="section-kicker">Installation &amp; Setup</p>
+        <h1 class="page-title">Guide</h1>
+        <p class="page-lede">Follow these steps to set up Depths &amp; Beyond, install the required mods, and configure Minecraft before joining the SMP.</p>
+      </div>
+    </header>
+
+    <div class="page-shell prose-shell">
+      <article class="prose guide-prose">
+        <div class="edit-note launcher-note">
+          <strong>Launcher note:</strong> This guide uses the <strong>Modrinth App</strong>. If you prefer another Minecraft launcher, the names and locations of buttons may differ. The end result should still be a Minecraft Java Edition <strong>1.20.1</strong> instance using the <strong>Fabric</strong> mod loader with the latest compatible loader revision, the Depths &amp; Beyond mod files installed, and enough RAM allocated for the pack.
+        </div>
+
+        <section class="guide-video-section">
+          <div class="guide-section-heading">
+            <p class="guide-step-label">Video walkthrough</p>
+            <h2>Prefer to watch instead?</h2>
+          </div>
+          <p>Watch the below video for an interactive setup tutorial.</p>
+
+          <div class="video-placeholder">
+            <div><span>VIDEO GUIDE COMING SOON</span><br>I haven't recorded a video yet. Proceed with the image guide below.</div>
+          </div>
+
+          <!--
+            YOUTUBE EXAMPLE:
+            Replace the .video-placeholder above with:
+
+            <div class="video-embed">
+              <iframe
+                src="https://www.youtube.com/embed/VIDEO_ID"
+                title="Depths & Beyond installation guide"
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowfullscreen>
+              </iframe>
+            </div>
+
+            LOCAL VIDEO EXAMPLE:
+            <div class="video-embed">
+              <video controls preload="metadata" src="assets/video/your-video.mp4"></video>
+            </div>
+          -->
+        </section>
+
+        <section class="guide-step" id="create-instance">
+          <p class="guide-step-label">Step 1</p>
+          <h2>Create a new Modrinth instance</h2>
+          <p>Open the Modrinth App and click the <strong>+</strong> button on the left-hand side to create a new instance.</p>
+
+          <figure class="guide-shot guide-shot--compact">
+            <a href="assets/images/guide/01-create-new-instance.png" target="_blank" rel="noopener noreferrer">
+              <img src="assets/images/guide/01-create-new-instance.png" alt="Modrinth plus button showing the Create new instance tooltip" loading="lazy" decoding="async">
+            </a>
+            <figcaption>Click <strong>Create new instance</strong>.</figcaption>
+          </figure>
+
+          <p>In the Create Instance window, choose <strong>Custom setup</strong>. This lets us select the exact Minecraft version and mod loader required by the server.</p>
+
+          <figure class="guide-shot guide-shot--portrait">
+            <a href="assets/images/guide/02-custom-setup.png" target="_blank" rel="noopener noreferrer">
+              <img src="assets/images/guide/02-custom-setup.png" alt="Modrinth Create instance window with Custom setup highlighted" loading="lazy" decoding="async">
+            </a>
+            <figcaption>Select <strong>Custom setup</strong>.</figcaption>
+          </figure>
+        </section>
+
+        <section class="guide-step" id="configure-instance">
+          <p class="guide-step-label">Step 2</p>
+          <h2>Configure Minecraft 1.20.1 with Fabric</h2>
+          <p>Give the instance a name such as <strong>Depths &amp; Beyond</strong>, choose <strong>Fabric</strong> as the loader, and set the game version to <strong>1.20.1</strong>.</p>
+          <p>For the loader version, use the <strong>latest stable revision available for Minecraft 1.20.1</strong>. Once everything matches, click <strong>Create instance</strong> and wait for Modrinth to finish installing the base game and Fabric loader.</p>
+
+          <figure class="guide-shot guide-shot--portrait">
+            <a href="assets/images/guide/03-instance-settings.png" target="_blank" rel="noopener noreferrer">
+              <img src="assets/images/guide/03-instance-settings.png" alt="Modrinth custom instance setup configured for Fabric and Minecraft 1.20.1" loading="lazy" decoding="async">
+            </a>
+            <figcaption>Use <strong>Fabric</strong>, Minecraft <strong>1.20.1</strong>, and the latest stable loader revision.</figcaption>
+          </figure>
+        </section>
+
+        <section class="guide-step" id="install-mods">
+          <p class="guide-step-label">Step 3</p>
+          <h2>Upload the Depths &amp; Beyond mod files</h2>
+          <p>After the instance has finished installing, open it in Modrinth. On a new instance you should see a <strong>No content installed</strong> screen.</p>
+          <p>The Depths &amp; Beyond download will be supplied as a <strong>.zip</strong> archive. Extract that archive somewhere easy to find, then click <strong>Upload files</strong> in Modrinth and select the individual <strong>.jar</strong> files from inside it. You can select all of the mod JARs at once.</p>
+
+          <div class="guide-tip"><strong>Important:</strong> Do <em>not</em> place the downloaded <code>.zip</code> itself in the mods folder, and do not create an extra folder inside <code>mods</code>. The individual <code>.jar</code> files must sit directly inside the instance's <code>mods</code> folder.</div>
+
+          <figure class="guide-shot">
+            <a href="assets/images/guide/04-upload-files.png" target="_blank" rel="noopener noreferrer">
+              <img src="assets/images/guide/04-upload-files.png" alt="Modrinth instance content screen with Upload files highlighted" loading="lazy" decoding="async">
+            </a>
+            <figcaption>Extract the downloaded modpack ZIP first, then use <strong>Upload files</strong> to add the individual JAR files.</figcaption>
+          </figure>
+        </section>
+
+        <section class="guide-step" id="memory">
+          <p class="guide-step-label">Step 4</p>
+          <h2>Allocate more memory</h2>
+          <p>Depths &amp; Beyond is considerably heavier than vanilla Minecraft, so the instance needs more memory than Modrinth normally allocates by default.</p>
+          <p>Open the instance and click the <strong>gear icon</strong> next to the Play button to enter <strong>Instance settings</strong>.</p>
+
+          <figure class="guide-shot guide-shot--compact">
+            <a href="assets/images/guide/05-open-instance-settings.png" target="_blank" rel="noopener noreferrer">
+              <img src="assets/images/guide/05-open-instance-settings.png" alt="Modrinth Instance settings gear icon" loading="lazy" decoding="async">
+            </a>
+            <figcaption>Open <strong>Instance settings</strong>.</figcaption>
+          </figure>
+
+          <p>Enable <strong>Custom memory allocation</strong> and increase the amount of RAM available to the instance. Depths &amp; Beyond requires a minimum of <strong>6 GB / 6144 MB</strong>. For most players, we recommend <strong>8 GB / 8192 MB</strong> if your computer has enough system memory available.</p>
+          <p>Avoid allocating all of your system RAM to Minecraft. If your PC only has <strong>8 GB of RAM in total</strong>, the modpack may struggle to run comfortably alongside Windows and other applications.</p>
+
+          <figure class="guide-shot guide-shot--wide">
+            <a href="assets/images/guide/06-memory-allocation.png" target="_blank" rel="noopener noreferrer">
+              <img src="assets/images/guide/06-memory-allocation.png" alt="Modrinth custom memory allocation setting" loading="lazy" decoding="async">
+            </a>
+            <figcaption>This screenshot shows where to configure memory. It is set to <strong>12 GB</strong> here, but most players should start with <strong>8 GB / 8192 MB</strong>.</figcaption>
+          </figure>
+        </section>
+
+        <section class="guide-step" id="jvm-arguments">
+          <p class="guide-step-label">Step 5</p>
+          <h2>Set the custom JVM arguments</h2>
+          <p>In the same instance settings, enable <strong>Custom Java arguments</strong> and paste the arguments below into the field. These provide lightweight garbage-collection tuning without forcing a specific amount of RAM; keep memory allocation configured using Modrinth's <strong>Custom memory allocation</strong> setting from the previous step.</p>
+
+          <figure class="guide-shot guide-shot--wide">
+            <a href="assets/images/guide/07-jvm-arguments.png" target="_blank" rel="noopener noreferrer">
+              <img src="assets/images/guide/07-jvm-arguments.png" alt="Modrinth Custom Java arguments setting enabled with JVM arguments entered" loading="lazy" decoding="async">
+            </a>
+            <figcaption>Enable <strong>Custom Java arguments</strong>, then paste the full line below.</figcaption>
+          </figure>
+
+          <div class="copy-code-block" data-copy-block>
+            <div class="copy-code-toolbar">
+              <span>JVM arguments</span>
+              <button class="copy-code-button" type="button" data-copy-button>Copy</button>
+            </div>
+            <pre><code data-copy-source>-XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UseStringDeduplication -XX:+PerfDisableSharedMem</code></pre>
+            <span class="copy-code-status" data-copy-status aria-live="polite"></span>
+          </div>
+
+          <div class="guide-tip"><strong>Memory note:</strong> These JVM arguments do <em>not</em> set the amount of RAM Minecraft can use. Keep your RAM allocation configured separately through Modrinth's <strong>Custom memory allocation</strong> setting above.</div>
+        </section>
+
+        <section class="guide-step" id="launch">
+          <p class="guide-step-label">Step 6</p>
+          <h2>Launch the pack</h2>
+          <p>Return to the instance page and click <strong>Play</strong>. The first launch may take longer than usual while Minecraft initializes the modpack and creates its configuration files.</p>
+          <p>Once the main menu appears, the client-side installation is complete.</p>
+
+          <div class="guide-coming-soon">
+            <strong>Next: joining the SMP.</strong> The in-game Multiplayer steps and server-list screenshot will be added here once that part of the guide is ready.
+          </div>
+        </section>
+      </article>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-shell">
+      <nav class="footer-mini-nav" aria-label="Footer navigation">
+        <a href="index.html">Home</a>
+        <a href="faq.html">FAQ</a>
+        <a href="guide.html">Guide</a>
+        <a href="request-access.html">Request Access</a>
+      </nav>
+      <p>Depths &amp; Beyond is a Modded Minecraft Java Edition SMP (Survival Multiplayer) server. Minecraft is a registered trademark of Mojang Studios / Microsoft Corporation. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>

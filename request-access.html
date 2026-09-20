@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Request access to the Depths & Beyond modded Minecraft SMP.">
+  <meta name="theme-color" content="#14160f">
+  <meta name="depths-access-endpoint" content="https://depths-whitelist.sylviarose4ef.workers.dev/">
+  <title>Request Access — Depths &amp; Beyond</title>
+
+  <meta property="og:title" content="Depths & Beyond — Request Access">
+  <meta property="og:description" content="Request whitelist access to the Depths & Beyond modded Minecraft SMP.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://depths.jellys-space.vip/request-access.html">
+  <meta property="og:image" content="https://depths.jellys-space.vip/assets/images/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="discord:component-embed" type="application/json" href="https://depths.jellys-space.vip/discord-embed.json">
+  <link rel="icon" type="image/png" href="assets/images/icon.png">
+  <link rel="stylesheet" href="assets/css/site.css">
+  <script>
+    try {
+      const savedTheme = localStorage.getItem('depths-theme');
+      if (savedTheme === 'light' || savedTheme === 'dark') document.documentElement.dataset.theme = savedTheme;
+    } catch (_) {}
+  </script>
+  <script defer src="assets/js/site.js"></script>
+  <script defer src="assets/js/request-access.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="nav-shell">
+      <a class="brand" href="index.html" aria-label="Depths & Beyond home">
+        <img src="assets/images/icon.png" width="64" height="64" alt="">
+        <span class="brand-text">Depths &amp; Beyond</span>
+      </a>
+      <button class="mobile-menu-toggle" type="button" data-menu-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation">☰</button>
+      <nav class="site-nav" id="site-nav" data-site-nav aria-label="Main navigation">
+        <a class="nav-link" href="index.html">Home</a>
+        <a class="nav-link" href="faq.html">FAQ</a>
+        <a class="nav-link" href="guide.html">Guide</a>
+        <a class="nav-link" href="request-access.html" aria-current="page">Request Access</a>
+      </nav>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to light theme" title="Switch to light theme">
+        <span class="theme-icon" data-theme-icon aria-hidden="true">☀</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main">
+    <header class="page-hero access-page-hero">
+      <div class="page-shell">
+        <p class="section-kicker">Whitelist Request</p>
+        <h1 class="page-title">Request Access</h1>
+        <p class="page-lede">Send us your Minecraft and Discord details so we can review your request and contact you.</p>
+      </div>
+    </header>
+
+    <div class="page-shell access-shell">
+      <section class="access-card" aria-labelledby="access-form-title">
+        <div class="access-card-heading">
+          <img src="assets/images/icon.png" width="72" height="72" alt="" aria-hidden="true">
+          <div>
+            <h2 id="access-form-title">Join Depths &amp; Beyond</h2>
+            <p>This does not whitelist you automatically. Your request is sent to the SMP staff for review.</p>
+          </div>
+        </div>
+
+        <form class="access-form" data-access-form novalidate>
+          <div class="form-field">
+            <label for="discord-username">Discord Username</label>
+            <input id="discord-username" name="discordUsername" type="text" maxlength="64" autocomplete="off" placeholder="Wumpus" required>
+            <p class="field-hint">Enter the Discord username we should use to contact you.</p>
+          </div>
+
+          <div class="form-field">
+            <label for="discord-user-id">Discord User ID</label>
+            <input id="discord-user-id" name="discordUserId" type="text" inputmode="numeric" pattern="[0-9]{15,22}" minlength="15" maxlength="22" autocomplete="off" placeholder="000000000000000000" required>
+            <p class="field-hint">Your numeric Discord User ID. This lets staff resolve your account directly from the request.</p>
+            <details class="field-help">
+              <summary>How do I find my Discord User ID?</summary>
+              <p>In Discord, enable <strong>Developer Mode</strong> in Settings → Advanced. Then right-click your profile and choose <strong>Copy User ID</strong>.</p>
+            </details>
+          </div>
+
+          <div class="form-field">
+            <label for="minecraft-username">Minecraft Username</label>
+            <input id="minecraft-username" name="minecraftUsername" type="text" minlength="3" maxlength="16" pattern="[A-Za-z0-9_]{3,16}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Wumpie74" required>
+            <p class="field-hint">Java Edition usernames can contain letters, numbers and underscores.</p>
+          </div>
+
+          <div class="access-honeypot" aria-hidden="true">
+            <label for="access-website">Website</label>
+            <input id="access-website" name="website" type="text" tabindex="-1" autocomplete="off">
+          </div>
+
+          <div class="access-actions">
+            <button class="button access-submit" type="submit" data-access-submit>Submit Request</button>
+            <p class="access-privacy">These details are only used to review your whitelist request and contact you about the SMP.</p>
+          </div>
+
+          <div class="access-status" data-access-status role="status" aria-live="polite" hidden></div>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-shell">
+      <nav class="footer-mini-nav" aria-label="Footer navigation">
+        <a href="index.html">Home</a>
+        <a href="faq.html">FAQ</a>
+        <a href="guide.html">Guide</a>
+        <a href="request-access.html">Request Access</a>
+      </nav>
+      <p>Depths &amp; Beyond is a Modded Minecraft Java Edition SMP (Survival Multiplayer) server. Minecraft is a registered trademark of Mojang Studios / Microsoft Corporation. All rights reserved.</p>
+    </div>
+  </footer>
+</body>
+</html>
