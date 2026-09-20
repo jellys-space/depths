@@ -51,8 +51,14 @@
           {
             "type": 2,
             "style": 5,
-            "url": "https://depths.jellys-space.vip/guide.html",
+            "url": "https://depths.jellys-space.vip/guide/",
             "label": "Guide"
+          },
+          {
+            "type": 2,
+            "style": 5,
+            "url": "https://depths.jellys-space.vip/request-access/",
+            "label": "Request Access"
           }
         ]
       }

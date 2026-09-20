@@ -119,9 +119,13 @@ button {
   }
 
   a[href],
+  a[href] *,
   button:not(:disabled),
+  button:not(:disabled) *,
   summary,
-  [role='button']:not([aria-disabled='true']) {
+  summary *,
+  [role='button']:not([aria-disabled='true']),
+  [role='button']:not([aria-disabled='true']) * {
     cursor: url('../cursors/link.cur'), pointer !important;
   }
 

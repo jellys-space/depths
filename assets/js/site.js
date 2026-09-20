@@ -1,4 +1,10 @@
 (() => {
+  // Keep canonical folder-style URLs even if someone explicitly opens index.html.
+  if (/\/index\.html$/i.test(window.location.pathname)) {
+    const cleanPath = window.location.pathname.replace(/index\.html$/i, '');
+    window.history.replaceState(null, '', `${cleanPath}${window.location.search}${window.location.hash}`);
+  }
+
   const root = document.documentElement;
   const themeButton = document.querySelector('[data-theme-toggle]');
   const menuButton = document.querySelector('[data-menu-toggle]');
