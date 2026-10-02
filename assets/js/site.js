@@ -11,7 +11,8 @@
   const nav = document.querySelector('[data-site-nav]');
 
   // A small pool allows overlapping clicks without rewinding an active sound.
-  // Playback starts only inside trusted gestures; navigation is never intercepted.
+  // Playback starts only inside trusted gestures. Ordinary page links allow a
+  // bounded sound attack before unloading; failed audio releases them immediately.
   const scriptUrl = document.currentScript?.src || new URL('assets/js/site.js', location.href).href;
   const audioPool = Array.from({ length: 5 }, (_, index) => {
     const audio = document.createElement('audio');
@@ -32,18 +33,83 @@
     if (!audio) return;
     try {
       if (audio.readyState > 0) audio.currentTime = 0;
-      audio.play()?.catch(() => {});
+      const sound = { audio, failed: false };
+      sound.playback = Promise.resolve(audio.play()).then(() => true, () => {
+        sound.failed = true;
+        return false;
+      });
+      return sound;
     } catch (_) { /* Sound is optional feedback; UI actions always proceed. */ }
   }
   let touchActivation = false;
+  let pointerSound = null;
+  const activationSounds = new WeakMap();
   document.addEventListener('pointerdown', (event) => {
     touchActivation = event.pointerType === 'touch';
-    if (event.pointerType !== 'touch' && event.button === 0) playClickSound(event);
+    pointerSound = null;
+    if (event.pointerType !== 'touch' && event.button === 0) {
+      pointerSound = { control: event.target.closest?.(clickableSelector), sound: playClickSound(event) };
+    }
   }, { capture: true, passive: true });
   // A trusted click is a supported activation gesture on iOS, including taps.
   document.addEventListener('click', (event) => {
-    if (touchActivation || event.pointerType === 'touch' || event.detail === 0) playClickSound(event);
+    if (!event.isTrusted) return;
+    const control = event.target.closest?.(clickableSelector);
+    const sound = touchActivation || event.pointerType === 'touch' || event.detail === 0 || pointerSound?.control !== control
+      ? playClickSound(event) : pointerSound?.sound;
+    if (sound) activationSounds.set(event, sound);
+    pointerSound = null;
   }, { capture: true, passive: true });
+
+  let cancelPendingNavigation = null;
+  document.addEventListener('click', (event) => {
+    const link = event.target.closest?.('a[href]');
+    if (!event.isTrusted || !link || event.defaultPrevented || event.button !== 0 ||
+        event.metaKey || event.ctrlKey || event.shiftKey || event.altKey ||
+        link.hasAttribute('download') || (link.target && link.target.toLowerCase() !== '_self')) return;
+    const destination = new URL(link.href);
+    if (destination.origin !== location.origin || !['http:', 'https:', 'file:'].includes(destination.protocol)) return;
+    if (destination.pathname === location.pathname && destination.search === location.search && destination.hash) return;
+
+    cancelPendingNavigation?.();
+    const sound = activationSounds.get(event);
+    if (!sound || sound.failed || sound.audio.ended) return;
+    event.preventDefault();
+    let finished = false;
+    let playbackTimer;
+    const cleanup = () => {
+      window.clearTimeout(deadlineTimer);
+      window.clearTimeout(playbackTimer);
+      sound.audio.removeEventListener('ended', navigate);
+      sound.audio.removeEventListener('error', navigate);
+      cancelPendingNavigation = null;
+    };
+    const navigate = () => {
+      if (finished) return;
+      finished = true;
+      cleanup();
+      window.location.assign(destination.href);
+    };
+    // Never wait indefinitely for a decoder, network load or autoplay permission.
+    const deadlineTimer = window.setTimeout(navigate, 250);
+    cancelPendingNavigation = () => { finished = true; cleanup(); };
+    sound.audio.addEventListener('ended', navigate, { once: true });
+    sound.audio.addEventListener('error', navigate, { once: true });
+    sound.playback.then((started) => {
+      if (finished) return;
+      if (!started) { navigate(); return; }
+      // The MP3's leading silence is trimmed. The untouched OGG needs longer.
+      // Count playback that already happened while the pointer was down.
+      const audibleWindowMs = sound.audio.currentSrc.endsWith('.ogg') ? 220 : 120;
+      const waitForAttack = () => {
+        if (finished) return;
+        const remainingMs = Math.max(0, audibleWindowMs - sound.audio.currentTime * 1000);
+        if (remainingMs === 0) navigate();
+        else playbackTimer = window.setTimeout(waitForAttack, Math.max(10, remainingMs));
+      };
+      waitForAttack();
+    });
+  });
 
   function currentTheme() {
     return root.dataset.theme === 'light' ? 'light' : 'dark';

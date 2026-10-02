@@ -98,9 +98,9 @@ The seven responsive screenshots retain their in-place crossfade and independent
 
 ## UI sounds
 
-`assets/js/site.js` uses five independent HTMLAudio slots so rapid interactions can overlap. Playback is attempted only from trusted mouse/pen, touch-click or keyboard activation gestures. Rejections are quietly caught; sound never intercepts navigation. Page transitions happen immediately, so a click's tail may end when the page unloads.
+`assets/js/site.js` uses five independent HTMLAudio slots so rapid interactions can overlap. Playback is attempted only from trusted mouse/pen, touch-click or keyboard activation gestures. Ordinary same-tab links to this site allow 120ms of MP3 playback (220ms for the untouched OGG) so the sound's attack is audible before the page unloads, counting playback since pointer-down. A 250ms hard deadline bounds audio loading; blocked/failed audio releases navigation immediately. Hash links, modified clicks, downloads and new-tab links keep their native behaviour. The sound's tail may still end when the page unloads.
 
-The original `assets/sounds/click.ogg` is retained. A small `click.mp3` fallback was transcoded locally from it with VLC's MP3 encoder; MP3 is offered first for Safari compatibility, followed by OGG. No external sound or library was added. Browser autoplay restrictions still apply.
+The original `assets/sounds/click.ogg` is retained. A small `click.mp3` fallback was transcoded locally from its decoded PCM with VLC's MP3 encoder, trimming leading silence so the click starts promptly; MP3 is offered first for Safari compatibility, followed by OGG. No external sound or library was added. Browser autoplay restrictions still apply.
 
 ## Local verification
 
