@@ -18,9 +18,12 @@
     const audio = document.createElement('audio');
     audio.preload = index === 0 ? 'auto' : 'none';
     audio.volume = 0.65;
-    for (const [file, type] of [['click.mp3', 'audio/mpeg'], ['click.ogg', 'audio/ogg']]) {
+    // Keep the original sound wherever OGG is supported. MP3 is a stereo fallback.
+    for (const [file, type] of [['click.ogg', 'audio/ogg'], ['click.mp3', 'audio/mpeg']]) {
       const source = document.createElement('source');
-      source.src = new URL('../sounds/' + file, scriptUrl).href;
+      const soundUrl = new URL('../sounds/' + file, scriptUrl);
+      if (file === 'click.mp3') soundUrl.searchParams.set('v', 'stereo-320k');
+      source.src = soundUrl.href;
       source.type = type;
       audio.appendChild(source);
     }
@@ -91,16 +94,16 @@
       window.location.assign(destination.href);
     };
     // Never wait indefinitely for a decoder, network load or autoplay permission.
-    const deadlineTimer = window.setTimeout(navigate, 250);
+    const deadlineTimer = window.setTimeout(navigate, 300);
     cancelPendingNavigation = () => { finished = true; cleanup(); };
     sound.audio.addEventListener('ended', navigate, { once: true });
     sound.audio.addEventListener('error', navigate, { once: true });
     sound.playback.then((started) => {
       if (finished) return;
       if (!started) { navigate(); return; }
-      // The MP3's leading silence is trimmed. The untouched OGG needs longer.
-      // Count playback that already happened while the pointer was down.
-      const audibleWindowMs = sound.audio.currentSrc.endsWith('.ogg') ? 220 : 120;
+      // Both files retain the original attack. Count playback that already
+      // happened while the pointer was down, allowing the main click to finish.
+      const audibleWindowMs = 220;
       const waitForAttack = () => {
         if (finished) return;
         const remainingMs = Math.max(0, audibleWindowMs - sound.audio.currentTime * 1000);
