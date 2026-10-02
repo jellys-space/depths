@@ -1,0 +1,19 @@
+# Optional CLI setup. Copy to ignored wrangler.toml and fill in YOUR database ID.
+name = "depths-whitelist"
+main = "worker.js"
+compatibility_date = "2026-10-02"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGINS = "https://depths.jellys-space.vip,http://localhost:8000,http://127.0.0.1:8000"
+TURNSTILE_HOSTNAMES = "depths.jellys-space.vip"
+TURNSTILE_ACTION = "request_access"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "depths-access"
+database_id = "REPLACE_WITH_YOUR_DATABASE_ID"
+migrations_dir = "migrations"
+
+# Set DISCORD_WEBHOOK_URL and TURNSTILE_SECRET_KEY with dashboard secrets or
+# wrangler secret put. Do not add their values to this file.

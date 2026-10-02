@@ -6,6 +6,8 @@
   <meta name="description" content="Request access to the Depths & Beyond modded Minecraft SMP.">
   <meta name="theme-color" content="#14160f">
   <meta name="depths-access-endpoint" content="https://depths-whitelist.sylviarose4ef.workers.dev/">
+  <!-- Public widget site key only. Keep the private secret in Cloudflare. -->
+  <meta name="depths-turnstile-site-key" content="REPLACE_WITH_PUBLIC_TURNSTILE_SITE_KEY">
   <title>Request Access — Depths &amp; Beyond</title>
 
   <meta property="og:title" content="Depths & Beyond — Request Access">
@@ -55,7 +57,6 @@
   <main id="main">
     <header class="page-hero access-page-hero">
       <div class="page-shell">
-        <p class="section-kicker">Whitelist Request</p>
         <h1 class="page-title">Request Access</h1>
         <p class="page-lede">Send us your Minecraft and Discord details so we can review your request and contact you.</p>
       </div>
@@ -74,14 +75,14 @@
         <form class="access-form" data-access-form novalidate>
           <div class="form-field">
             <label for="discord-username">Discord Username</label>
-            <input id="discord-username" name="discordUsername" type="text" maxlength="64" autocomplete="off" placeholder="Wumpus" required>
-            <p class="field-hint">Enter the Discord username we should use to contact you.</p>
+            <input id="discord-username" name="discordUsername" type="text" maxlength="64" autocomplete="off" placeholder="Wumpus" aria-describedby="discord-username-hint" required>
+            <p class="field-hint" id="discord-username-hint">Enter the Discord username we should use to contact you.</p>
           </div>
 
           <div class="form-field">
             <label for="discord-user-id">Discord User ID</label>
-            <input id="discord-user-id" name="discordUserId" type="text" inputmode="numeric" pattern="[0-9]{15,22}" minlength="15" maxlength="22" autocomplete="off" placeholder="000000000000000000" required>
-            <p class="field-hint">Your numeric Discord User ID. This lets staff resolve your account directly from the request.</p>
+            <input id="discord-user-id" name="discordUserId" type="text" inputmode="numeric" pattern="[1-9][0-9]{14,21}" minlength="15" maxlength="22" autocomplete="off" placeholder="123456789012345678" aria-describedby="discord-id-hint" required>
+            <p class="field-hint" id="discord-id-hint">Your numeric Discord User ID. This lets staff resolve your account directly from the request.</p>
             <details class="field-help">
               <summary>How do I find my Discord User ID?</summary>
               <p>In Discord, enable <strong>Developer Mode</strong> in Settings → Advanced. Then right-click your profile and choose <strong>Copy User ID</strong>.</p>
@@ -90,8 +91,8 @@
 
           <div class="form-field">
             <label for="minecraft-username">Minecraft Username</label>
-            <input id="minecraft-username" name="minecraftUsername" type="text" minlength="3" maxlength="16" pattern="[A-Za-z0-9_]{3,16}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Wumpie74" required>
-            <p class="field-hint">Java Edition usernames can contain letters, numbers and underscores.</p>
+            <input id="minecraft-username" name="minecraftUsername" type="text" minlength="3" maxlength="16" pattern="[A-Za-z0-9_]{3,16}" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Wumpie74" aria-describedby="minecraft-hint" required>
+            <p class="field-hint" id="minecraft-hint">Java Edition usernames can contain letters, numbers and underscores.</p>
           </div>
 
           <div class="access-honeypot" aria-hidden="true">
@@ -100,6 +101,7 @@
           </div>
 
           <div class="access-actions">
+            <div class="access-turnstile" data-access-turnstile hidden></div>
             <button class="button access-submit" type="submit" data-access-submit>Submit Request</button>
             <p class="access-privacy">These details are only used to review your whitelist request and contact you about the SMP.</p>
           </div>

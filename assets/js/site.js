@@ -10,101 +10,40 @@
   const menuButton = document.querySelector('[data-menu-toggle]');
   const nav = document.querySelector('[data-site-nav]');
 
-  const footer = document.querySelector('.site-footer');
-
-  // Global UI click sound. Resolve it relative to this script so it works
-  // on GitHub Pages, localhost, and when the HTML is opened directly.
-  const siteScriptUrl = document.currentScript?.src;
-  const clickSoundUrl = siteScriptUrl
-    ? new URL('../sounds/click.ogg', siteScriptUrl).href
-    : 'assets/sounds/click.ogg';
-  const clickSound = new Audio(clickSoundUrl);
-  clickSound.preload = 'auto';
-  clickSound.volume = 0.65;
-
-  const clickableSelector = [
-    'a[href]',
-    'button:not([disabled])',
-    '[role="button"]:not([aria-disabled="true"])',
-    'input:not([type="hidden"]):not([disabled])',
-    'textarea:not([disabled])',
-    'select:not([disabled])'
-  ].join(', ');
-
-  function playClickSound() {
-    try {
-      clickSound.currentTime = 0;
-      const playback = clickSound.play();
-      if (playback && typeof playback.catch === 'function') playback.catch(() => {});
-    } catch (_) {
-      // Audio should never block the underlying interaction.
+  // A small pool allows overlapping clicks without rewinding an active sound.
+  // Playback starts only inside trusted gestures; navigation is never intercepted.
+  const scriptUrl = document.currentScript?.src || new URL('assets/js/site.js', location.href).href;
+  const audioPool = Array.from({ length: 5 }, (_, index) => {
+    const audio = document.createElement('audio');
+    audio.preload = index === 0 ? 'auto' : 'none';
+    audio.volume = 0.65;
+    for (const [file, type] of [['click.mp3', 'audio/mpeg'], ['click.ogg', 'audio/ogg']]) {
+      const source = document.createElement('source');
+      source.src = new URL('../sounds/' + file, scriptUrl).href;
+      source.type = type;
+      audio.appendChild(source);
     }
-  }
-
-  // Fire as soon as the pointer is pressed. This makes navigation links audible
-  // before the browser leaves the page, and also covers the Request Access fields.
-  document.addEventListener('pointerdown', (event) => {
-    if (event.button !== undefined && event.button !== 0) return;
-    const control = event.target.closest?.(clickableSelector);
-    if (!control) return;
-    playClickSound();
-  }, true);
-
-  // Keyboard activation (Enter/Space) produces a click without a pointerdown.
-  document.addEventListener('click', (event) => {
-    const control = event.target.closest?.(clickableSelector);
-    if (!control) return;
-
-    if (event.detail === 0) {
-      playClickSound();
-    }
-
-    // Same-tab navigation destroys the current document (and its Audio object), so
-    // wait for the click sound to finish before leaving the page. Pointer users
-    // have already started the sound on pointerdown; keyboard activation starts it
-    // above, so we only wait for whatever duration remains. Modified clicks,
-    // downloads, hash links, and links that open elsewhere behave normally.
-    if (!(control instanceof HTMLAnchorElement)) return;
-    if (event.defaultPrevented) return;
-    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    if (control.hasAttribute('download')) return;
-    if (control.target && control.target.toLowerCase() !== '_self') return;
-
-    const href = control.getAttribute('href');
-    if (!href || href.startsWith('#')) return;
-
-    event.preventDefault();
-
-    const navigate = () => {
-      window.location.href = control.href;
-    };
-
-    const duration = Number.isFinite(clickSound.duration) ? clickSound.duration : 0;
-    const currentTime = Number.isFinite(clickSound.currentTime) ? clickSound.currentTime : 0;
-    // The bundled click.ogg is ~0.41 s long. If metadata is not ready yet,
-    // use a safe fallback so the tail is still audible on first navigation.
-    const remainingMs = duration > 0
-      ? Math.max(0, (duration - currentTime) * 1000) + 35
-      : 460;
-
-    window.setTimeout(navigate, remainingMs);
+    return audio;
   });
-
-  function syncFooterHeight() {
-    if (!footer) return;
-    root.style.setProperty('--footer-height', `${Math.ceil(footer.getBoundingClientRect().height)}px`);
+  const clickableSelector = 'a[href], button:not([disabled]), summary, [role="button"]:not([aria-disabled="true"]), input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), select:not([disabled])';
+  function playClickSound(event) {
+    if (!event.isTrusted || !event.target.closest?.(clickableSelector)) return;
+    const audio = audioPool.find((item) => item.paused || item.ended);
+    if (!audio) return;
+    try {
+      if (audio.readyState > 0) audio.currentTime = 0;
+      audio.play()?.catch(() => {});
+    } catch (_) { /* Sound is optional feedback; UI actions always proceed. */ }
   }
-
-  if (footer) {
-    syncFooterHeight();
-    window.addEventListener('resize', syncFooterHeight, { passive: true });
-    window.addEventListener('load', syncFooterHeight, { once: true });
-
-    if ('ResizeObserver' in window) {
-      const footerObserver = new ResizeObserver(syncFooterHeight);
-      footerObserver.observe(footer);
-    }
-  }
+  let touchActivation = false;
+  document.addEventListener('pointerdown', (event) => {
+    touchActivation = event.pointerType === 'touch';
+    if (event.pointerType !== 'touch' && event.button === 0) playClickSound(event);
+  }, { capture: true, passive: true });
+  // A trusted click is a supported activation gesture on iOS, including taps.
+  document.addEventListener('click', (event) => {
+    if (touchActivation || event.pointerType === 'touch' || event.detail === 0) playClickSound(event);
+  }, { capture: true, passive: true });
 
   function currentTheme() {
     return root.dataset.theme === 'light' ? 'light' : 'dark';
@@ -125,20 +64,31 @@
   themeButton?.addEventListener('click', () => {
     const next = currentTheme() === 'dark' ? 'light' : 'dark';
     root.dataset.theme = next;
-    localStorage.setItem('depths-theme', next);
+    try { localStorage.setItem('depths-theme', next); } catch (_) {}
     updateThemeButton();
   });
 
   menuButton?.addEventListener('click', () => {
     const open = nav?.classList.toggle('is-open') ?? false;
     menuButton.setAttribute('aria-expanded', String(open));
+    menuButton.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
   });
 
   nav?.querySelectorAll('a').forEach((link) => {
     link.addEventListener('click', () => {
       nav.classList.remove('is-open');
       menuButton?.setAttribute('aria-expanded', 'false');
+      menuButton?.setAttribute('aria-label', 'Open navigation');
     });
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && nav?.classList.contains('is-open')) {
+      nav.classList.remove('is-open');
+      menuButton?.setAttribute('aria-expanded', 'false');
+      menuButton?.setAttribute('aria-label', 'Open navigation');
+      menuButton?.focus();
+    }
   });
 
   const copyButtons = [...document.querySelectorAll('[data-copy-button]')];
@@ -265,6 +215,9 @@
     dot.addEventListener('click', () => showSlide(index, true));
   });
 
+  document.querySelector('[data-slide-previous]')?.addEventListener('click', () => showSlide(activeIndex - 1, true));
+  document.querySelector('[data-slide-next]')?.addEventListener('click', () => showSlide(activeIndex + 1, true));
+
   slideshow.addEventListener('mouseenter', stopAutoplay);
   slideshow.addEventListener('mouseleave', startAutoplay);
   slideshow.addEventListener('focusin', stopAutoplay);
@@ -284,8 +237,9 @@
   }, { passive: true });
 
   slideshow.addEventListener('keydown', (event) => {
-    if (event.key === 'ArrowRight') showSlide(activeIndex + 1, true);
-    if (event.key === 'ArrowLeft') showSlide(activeIndex - 1, true);
+    if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    event.preventDefault();
+    showSlide(activeIndex + (event.key === 'ArrowRight' ? 1 : -1), true);
   });
 
   showSlide(0);

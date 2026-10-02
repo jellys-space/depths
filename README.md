@@ -50,25 +50,15 @@ All main pages include:
 Standard Open Graph metadata is also present as a fallback.
 
 
-## Request Access webhook
+## Request Access and Cloudflare
 
-The Request Access page is static, but submissions are relayed through the separate Cloudflare Worker included beside this website folder. **Never put the Discord webhook URL in this repository or in browser-side JavaScript.**
+The existing public Worker endpoint in `request-access/index.html` is retained. The version-controlled module Worker, D1 migration, example Wrangler configuration and dashboard setup guide live in [cloudflare-worker/](cloudflare-worker/README.md). The Discord webhook URL and Turnstile secret belong only in Cloudflare's encrypted Worker secrets; never put them in the website or Git.
 
-After deploying the Worker, open `request-access/index.html` and change:
+The form keeps its Discord Username, numeric Discord User ID, Minecraft Username, validation, honeypot and Discord ID help. Configuring the public `depths-turnstile-site-key` meta value activates a Managed Turnstile widget and sends its single-use token. While `REPLACE_WITH_PUBLIC_TURNSTILE_SITE_KEY` remains, the form keeps the old submission flow and does not load the widget. Once configured, verification failures do not fall back to unverified submission.
 
-```html
-<meta name="depths-access-endpoint" content="https://REPLACE-WITH-YOUR-WORKER.workers.dev/">
-```
+The new Worker verifies Turnstile's success, hostname and action before an atomic D1 insertion. UNIQUE constraints permanently protect Discord ID and lowercase Minecraft username. A duplicate returns `already_submitted` and a friendly message without disclosing which identifier matched. There is no cooldown, expiry, fingerprinting or browser-based security. Successful Discord delivery retains the record permanently; definite rejection releases it; ambiguous delivery stays reserved for staff review.
 
-to the public URL Cloudflare gives your Worker. The browser sends only the three form fields to that Worker. The Worker keeps the Discord webhook URL secret and posts the final embed to Discord.
-
-The form asks for:
-
-- Discord Username
-- Discord User ID
-- Minecraft Username
-
-The Discord User ID is rendered by the webhook as `<@USER_ID>` so Discord can resolve the account directly in the whitelist request.
+**Safe order:** ship this redesign with the placeholder and old Worker first; create Turnstile and D1, apply the SQL, add `DB` and the two secrets; publish the real public site key and wait for Pages; then replace the existing Worker's dashboard code. Follow the [complete dashboard guide](cloudflare-worker/README.md), including staging tests and historical-record import if required. No production secrets or deployment are supplied by this repository.
 
 ## GitHub Pages
 
@@ -96,23 +86,33 @@ The slideshow uses `srcset` so browsers can choose the smaller file when appropr
 The site uses WOFF2 subsets for normal page delivery while retaining the supplied originals and license files.
 
 
-## Visual notes
+## Visual design and background
 
-The default dark palette uses warm deepslate/stone, moss, torchlight gold, and a small End-purple accent rather than the earlier blue UI palette. The homepage slideshow uses a lightweight CSS transform for a slow cinematic zoom after each slide settles into view. `prefers-reduced-motion` disables the effect automatically.
+All routes use the supplied `assets/images/minecraft-world-bg.png` once on a stationary CSS layer: zoomed to fill the viewport, top-aligned below the header, and darkened/tinted for text contrast. Content scrolls over this single world composition; the wallpaper never repeats. A fixed pseudo-element and stable large-viewport units support mobile browser bars without `background-attachment: fixed` or scroll animation scripts. Dark mode is primary; the light theme uses pale stone surfaces and its own contrast values. Local Minecraft and Share Tech fonts, cursors, logos, screenshots, OG metadata and Discord embed are preserved.
 
+Navigation, game-style buttons, cards, guide/code panels and the application menu use hard corners, bevels, inset slots and stone/moss/gold accents. The footer stays in document flow so it cannot cover mobile content. The homepage logo uses a responsive 240–360px desktop width and a smaller mobile range. Pixel SVG icons are decorative; headings and copy carry their meaning.
 
 ## Slideshow
 
-Each `<figure class="slide">` is explicitly reset to zero margin and fills the complete 16:9 slideshow viewport. The slide layer handles the entrance transition; the `<img>` inside handles the independent cinematic push-in. This keeps every screenshot fitted to the frame throughout the transition.
+The seven responsive screenshots retain their in-place crossfade and independent slow cinematic zoom. Each figure fills the 16:9 viewport with zero margin. Square previous/next controls, dots with 44px touch targets, left/right keyboard controls and swipes all use the same wraparound/manual navigation behaviour and restart autoplay. Reduced motion disables autoplay and the zoom's visible motion. Hover/focus pauses autoplay until manual navigation or leaving the gallery.
 
+## UI sounds
 
-### Slideshow transition
-The homepage gallery uses an in-place crossfade with a continuous slow cinematic zoom. Slides never translate horizontally, which prevents exposed edges during transitions.
+`assets/js/site.js` uses five independent HTMLAudio slots so rapid interactions can overlap. Playback is attempted only from trusted mouse/pen, touch-click or keyboard activation gestures. Rejections are quietly caught; sound never intercepts navigation. Page transitions happen immediately, so a click's tail may end when the page unloads.
 
+The original `assets/sounds/click.ogg` is retained. A small `click.mp3` fallback was transcoded locally from it with VLC's MP3 encoder; MP3 is offered first for Safari compatibility, followed by OGG. No external sound or library was added. Browser autoplay restrictions still apply.
 
-### v7
-- Reduced the 404-page logo to a compact, viewport-aware size and reduced its intrinsic HTML dimensions so it cannot flash at full source size while styles load.
+## Local verification
 
+Serve this repository root on port 8000 (for example, `python -m http.server 8000`) and visit `http://localhost:8000/`. Check the homepage, FAQ, guide, Request Access and 404 at desktop and phone widths in both themes. Keep automated form requests mocked or use a staging Worker with a dedicated test Discord webhook; never send automated tests to production.
+
+Run offline security tests with Node 22.13+ / 24+:
+
+```sh
+node --test cloudflare-worker/worker.test.mjs
+```
+
+They use in-memory SQLite and mocked HTTP, with no install/build step for the website.
 
 ## Clean URLs
 

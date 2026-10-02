@@ -1,0 +1,10 @@
+# Private Worker configuration and local development state
+cloudflare-worker/wrangler.toml
+cloudflare-worker/.dev.vars*
+cloudflare-worker/.env*
+**/.wrangler/
+node_modules/
+*.sqlite
+*.sqlite3
+*.db
+*.log

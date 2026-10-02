@@ -6,6 +6,41 @@
   const status = form.querySelector('[data-access-status]');
   const endpoint = document.querySelector('meta[name="depths-access-endpoint"]')?.content?.trim() || '';
   const endpointConfigured = endpoint && !endpoint.includes('REPLACE-WITH-YOUR-WORKER');
+  const siteKey = document.querySelector('meta[name="depths-turnstile-site-key"]')?.content?.trim() || '';
+  const turnstileEnabled = Boolean(siteKey && !siteKey.startsWith('REPLACE_'));
+  let turnstileToken = '';
+  let widgetId;
+
+  if (turnstileEnabled) {
+    const container = form.querySelector('[data-access-turnstile]');
+    container.hidden = false;
+    window.depthsTurnstileReady = () => {
+      widgetId = window.turnstile.render(container, {
+        sitekey: siteKey,
+        action: 'request_access',
+        size: 'flexible',
+        theme: 'auto',
+        callback: (token) => { turnstileToken = token; },
+        'expired-callback': () => { turnstileToken = ''; },
+        'error-callback': () => {
+          turnstileToken = '';
+          showStatus('The verification could not load. Please reload the page and try again.', 'error');
+        }
+      });
+    };
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=depthsTurnstileReady&render=explicit';
+    script.async = true;
+    script.onerror = () => showStatus('The verification could not load. Please reload the page and try again.', 'error');
+    document.head.appendChild(script);
+  } else if (['localhost', '127.0.0.1'].includes(location.hostname)) {
+    console.warn('Turnstile is not configured. The form is using the existing Worker submission flow until the migration is complete.');
+  }
+
+  function resetVerification() {
+    turnstileToken = '';
+    if (widgetId !== undefined) window.turnstile?.reset(widgetId);
+  }
 
   function showStatus(message, type) {
     if (!status) return;
@@ -42,12 +77,12 @@
 
     let firstInvalid = null;
 
-    if (discordUsername.length < 2 || discordUsername.length > 64) {
+    if (discordUsername.length < 2 || discordUsername.length > 64 || /[\u0000-\u001f\u007f]/.test(discordUsername)) {
       discordUsernameField.setAttribute('aria-invalid', 'true');
       firstInvalid ||= discordUsernameField;
     }
 
-    if (!/^\d{15,22}$/.test(discordUserId)) {
+    if (!/^[1-9]\d{14,21}$/.test(discordUserId)) {
       discordUserIdField.setAttribute('aria-invalid', 'true');
       firstInvalid ||= discordUserIdField;
     }
@@ -63,6 +98,11 @@
       return;
     }
 
+    if (turnstileEnabled && !turnstileToken) {
+      showStatus('Please complete the verification before sending your request.', 'error');
+      return;
+    }
+
     const originalLabel = submitButton.textContent;
     submitButton.disabled = true;
     submitButton.textContent = 'Sending…';
@@ -72,7 +112,8 @@
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ discordUsername, discordUserId, minecraftUsername, website })
+        body: JSON.stringify({ discordUsername, discordUserId, minecraftUsername, website,
+          ...(turnstileEnabled ? { turnstileToken } : {}) })
       });
 
       let payload = null;
@@ -81,17 +122,25 @@
       } catch (_) {}
 
       if (!response.ok || payload?.ok === false) {
-        throw new Error(payload?.error || `Request failed with status ${response.status}`);
+        const error = new Error('Request failed');
+        error.code = payload?.code;
+        throw error;
       }
 
       form.reset();
       showStatus('Request sent! We’ll contact you on Discord once your whitelist request has been reviewed.', 'success');
       submitButton.textContent = 'Request Sent';
     } catch (error) {
-      console.error('Whitelist request failed:', error);
-      showStatus('We could not send your request right now. Please try again in a moment, or contact us through the Jelly’s Space Discord.', 'error');
+      const messages = {
+        already_submitted: 'A whitelist request has already been submitted for that Discord account or Minecraft username.',
+        verification_failed: 'The verification expired or could not be confirmed. Please complete it again and retry.',
+        delivery_uncertain: 'Your request may have reached staff. Please contact us through Discord before trying again so we can check it.'
+      };
+      showStatus(messages[error.code] || 'We could not send your request right now. Please try again in a moment, or contact us through the Jelly’s Space Discord.', 'error');
       submitButton.disabled = false;
       submitButton.textContent = originalLabel;
+    } finally {
+      resetVerification();
     }
   });
 })();
