@@ -1380,6 +1380,9 @@ html[data-theme='light'] .form-field input {
 /* World and block UI: opaque reading surfaces over one shared wallpaper. */
 :root {
   --world-tint: rgba(14, 19, 16, 0.76);
+  --button-green: #3c7f25;
+  --button-green-hover: #2b631a;
+  --button-green-pressed: #214f14;
   --surface: rgba(29, 34, 30, 0.97);
   --surface-solid: #252c26;
   --surface-2: #353d33;
@@ -1392,11 +1395,11 @@ html[data-theme='light'] .form-field input {
   --slot: #111912;
 }
 html[data-theme='light'] {
-  --world-tint: rgba(227, 229, 211, 0.88);
+  --world-tint: rgba(227, 229, 211, 0.80);
   --surface: rgba(242, 240, 223, 0.98);
   --surface-solid: #eeebd8;
   --surface-2: #d8d9c3;
-  --muted: #4e5644;
+  --muted: #424a39;
   --border: #949b80;
   --border-strong: #64734c;
   --header-bg: #e5e7d2;
@@ -1411,20 +1414,21 @@ html[data-theme='light'] {
 .nav-link[aria-current='page'] { border-color: var(--border-strong); box-shadow: inset 0 -3px 0 var(--green); }
 .button, .copy-code-button, .theme-toggle, .mobile-menu-toggle, .gallery-arrow {
   border: 2px solid #11180f;
-  background: #466331;
+  background: var(--button-green);
   color: #fff9e4;
   box-shadow: inset 2px 2px 0 rgba(255,255,255,.23), inset -2px -3px 0 rgba(0,0,0,.35), 3px 3px 0 rgba(0,0,0,.35);
   text-shadow: 1px 2px 0 rgba(0,0,0,.5);
   transition: background 120ms, transform 120ms;
 }
-.button.secondary, .theme-toggle, .mobile-menu-toggle, .copy-code-button {
-  background: var(--surface-2); color: var(--text); text-shadow: none;
+.button.secondary { background: var(--button-green); border-color: #11180f; }
+.button.discord { background: var(--button-green); border-color: #514767; }
+.button:hover, .button:focus-visible, .copy-code-button:hover, .gallery-arrow:hover,
+.theme-toggle:hover, .mobile-menu-toggle:hover {
+  background: var(--button-green-hover); border-color: var(--cyan); transform: translateY(-1px);
 }
-.button.discord { background: #484b7c; border-color: #252539; }
-.button:hover, .copy-code-button:hover, .gallery-arrow:hover { background: #57783b; border-color: var(--cyan); transform: translateY(-1px); }
-.button.secondary:hover, .theme-toggle:hover, .mobile-menu-toggle:hover { background: var(--surface-solid); }
-.button.discord:hover { background: #595d93; }
-.button:active, .copy-code-button:active, .gallery-arrow:active, .theme-toggle:active, .mobile-menu-toggle:active {
+.button.discord:hover, .button.discord:focus-visible { background: var(--button-green-hover); border-color: #9270aa; }
+.button:active, .button.discord:active, .copy-code-button:active, .gallery-arrow:active, .theme-toggle:active, .mobile-menu-toggle:active {
+  background: var(--button-green-pressed);
   transform: translate(1px, 2px);
   box-shadow: inset 2px 2px 0 rgba(0,0,0,.35), inset -2px -2px 0 rgba(255,255,255,.12);
 }
@@ -1449,7 +1453,7 @@ html[data-theme='light'] {
   position: absolute; top: calc(50% - 24px); z-index: 5;
   width: 48px; height: 48px; padding: 0;
   display: grid; place-items: center;
-  background: #252d23; font-family: 'Minecraft', monospace; font-size: 1.2rem;
+  font-family: 'Minecraft', monospace; font-size: 1.2rem;
 }
 .gallery-arrow--previous { left: 8px; }
 .gallery-arrow--next { right: 8px; }
@@ -1464,7 +1468,9 @@ html[data-theme='light'] {
 .guide-warning { border-left: 5px solid var(--gold); }
 .guide-shot a, .copy-code-block, .video-embed, .video-placeholder { border-width: 3px; box-shadow: 3px 3px 0 var(--bevel-dark); }
 .copy-code-button { min-height: 44px; }
-html[data-theme='light'] .copy-code-button { background: var(--surface-2); color: var(--text); }
+html[data-theme='light'] .copy-code-button { background: var(--button-green); color: #fff9e4; }
+html[data-theme='light'] .copy-code-button:hover { background: var(--button-green-hover); }
+html[data-theme='light'] .copy-code-button:active { background: var(--button-green-pressed); }
 .access-card { border-width: 5px; max-width: 700px; }
 .access-card-heading { padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: 3px solid var(--border); }
 .access-form { gap: 1.1rem; }
