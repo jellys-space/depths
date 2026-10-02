@@ -1421,17 +1421,18 @@ html[data-theme='light'] {
   transition: background 120ms, transform 120ms;
 }
 .button.secondary { background: var(--button-green); border-color: #11180f; }
-.button.discord { background: var(--button-green); border-color: #514767; }
+.button.discord { background: #484b7c; border-color: #252539; }
 .button:hover, .button:focus-visible, .copy-code-button:hover, .gallery-arrow:hover,
 .theme-toggle:hover, .mobile-menu-toggle:hover {
   background: var(--button-green-hover); border-color: var(--cyan); transform: translateY(-1px);
 }
-.button.discord:hover, .button.discord:focus-visible { background: var(--button-green-hover); border-color: #9270aa; }
-.button:active, .button.discord:active, .copy-code-button:active, .gallery-arrow:active, .theme-toggle:active, .mobile-menu-toggle:active {
+.button.discord:hover, .button.discord:focus-visible { background: #595d93; border-color: #9270aa; }
+.button:active, .copy-code-button:active, .gallery-arrow:active, .theme-toggle:active, .mobile-menu-toggle:active {
   background: var(--button-green-pressed);
   transform: translate(1px, 2px);
   box-shadow: inset 2px 2px 0 rgba(0,0,0,.35), inset -2px -2px 0 rgba(255,255,255,.12);
 }
+.button.discord:active { background: #383b62; }
 .hero-copy, .hero-tagline, .microcopy, .section-title, .section-intro, .page-title, .page-lede, .not-found {
   text-shadow: 0 2px 0 var(--bg);
 }
