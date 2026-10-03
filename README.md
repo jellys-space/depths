@@ -71,12 +71,12 @@ The `.nojekyll` file keeps GitHub Pages from applying Jekyll processing.
 
 ## Images
 
-The seven supplied 3839×2159 PNG screenshots were converted into responsive WebP versions:
+The twelve supplied 3839×2159 PNG screenshots were converted into responsive WebP versions:
 
 - `*-1920.webp` for larger screens;
 - `*-960.webp` for phones/smaller displays.
 
-The slideshow uses `srcset` so browsers can choose the smaller file when appropriate.
+The slideshow uses `srcset` so browsers can choose the smaller file when appropriate. Only optimized WebPs are used by the website; newly supplied original PNGs are preserved locally and are not included in the deployment commit.
 
 ## Fonts
 
@@ -88,13 +88,13 @@ The site uses WOFF2 subsets for normal page delivery while retaining the supplie
 
 ## Visual design and background
 
-All routes use the supplied `assets/images/minecraft-world-bg.png` once on a stationary CSS layer: zoomed to fill the viewport, top-aligned below the header, and darkened/tinted for text contrast. Content scrolls over this single world composition; the wallpaper never repeats. A fixed pseudo-element and stable large-viewport units support mobile browser bars without `background-attachment: fixed` or scroll animation scripts. Dark mode is primary; the light theme uses pale stone surfaces and its own contrast values. Local Minecraft and Share Tech fonts, cursors, logos, screenshots, OG metadata and Discord embed are preserved.
+All routes use the supplied `assets/images/minecraft-world-bg.png` once on a stationary CSS layer: zoomed to fill the viewport, top-aligned below the header, and darkened/tinted for text contrast. Content scrolls over this single world composition; the wallpaper never repeats. The fixed layer belongs to the root element, outside the scrolling body, and spans the full viewport with a large-viewport minimum height to avoid clipping when mobile browser bars collapse. Only the image is offset below the header. This uses no `background-attachment: fixed` or scroll animation scripts. Dark mode is primary; the light theme uses pale stone surfaces and its own contrast values. Local Minecraft and Share Tech fonts, cursors, logos, screenshots, OG metadata and Discord embed are preserved.
 
 Navigation, game-style buttons, cards, guide/code panels and the application menu use hard corners, bevels, inset slots and stone/moss/gold accents. The footer stays in document flow so it cannot cover mobile content. The homepage logo uses a responsive 240–360px desktop width and a smaller mobile range. Pixel SVG icons are decorative; headings and copy carry their meaning.
 
 ## Slideshow
 
-The seven responsive screenshots retain their in-place crossfade and independent slow cinematic zoom. Each figure fills the 16:9 viewport with zero margin. Square previous/next controls, dots with 44px touch targets, left/right keyboard controls and swipes all use the same wraparound/manual navigation behaviour and restart autoplay. Reduced motion disables autoplay and the zoom's visible motion. Hover/focus pauses autoplay until manual navigation or leaving the gallery.
+The twelve responsive screenshots retain their in-place crossfade and independent slow cinematic zoom. Each figure fills the 16:9 viewport with zero margin. Square previous/next controls, dots with 44px touch targets, left/right keyboard controls and swipes all use the same wraparound/manual navigation behaviour and restart autoplay. Reduced motion disables autoplay and the zoom's visible motion. Hover/focus pauses autoplay until manual navigation or leaving the gallery.
 
 ## UI sounds
 
