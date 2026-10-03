@@ -10,6 +10,34 @@
   const menuButton = document.querySelector('[data-menu-toggle]');
   const nav = document.querySelector('[data-site-nav]');
 
+  // Safari clips fixed wallpaper behind its floating toolbar. Paint the mobile
+  // wallpaper on the document canvas and offset it by scrollY to hold it still.
+  // One frame is scheduled only when scrolling/resizing; nothing runs at idle.
+  const mobileWorld = window.matchMedia('(max-width: 820px), (hover: none) and (pointer: coarse)');
+  let worldFrame = 0;
+  const positionWorld = () => {
+    if (!mobileWorld.matches) {
+      root.classList.remove('world-background-tracked');
+      root.style.removeProperty('--world-scroll-y');
+      return;
+    }
+    root.style.setProperty('--world-scroll-y', `${Math.max(0, window.scrollY)}px`);
+    root.classList.add('world-background-tracked');
+  };
+  const scheduleWorldPosition = () => {
+    if (!mobileWorld.matches || worldFrame) return;
+    worldFrame = window.requestAnimationFrame(() => {
+      worldFrame = 0;
+      positionWorld();
+    });
+  };
+  positionWorld();
+  mobileWorld.addEventListener('change', positionWorld);
+  window.addEventListener('scroll', scheduleWorldPosition, { passive: true });
+  window.addEventListener('resize', scheduleWorldPosition, { passive: true });
+  window.addEventListener('pageshow', positionWorld);
+  window.visualViewport?.addEventListener('resize', scheduleWorldPosition, { passive: true });
+
   // Reserve the fixed desktop footer's actual height, including wrapped text.
   const footer = document.querySelector('.site-footer');
   if (footer) {
