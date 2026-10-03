@@ -10,6 +10,17 @@
   const menuButton = document.querySelector('[data-menu-toggle]');
   const nav = document.querySelector('[data-site-nav]');
 
+  // Reserve the fixed desktop footer's actual height, including wrapped text.
+  const footer = document.querySelector('.site-footer');
+  if (footer) {
+    const reserveFooterSpace = () => {
+      root.style.setProperty('--desktop-footer-height', `${Math.ceil(footer.getBoundingClientRect().height)}px`);
+    };
+    reserveFooterSpace();
+    if ('ResizeObserver' in window) new ResizeObserver(reserveFooterSpace).observe(footer);
+    else window.addEventListener('resize', reserveFooterSpace, { passive: true });
+  }
+
   // A small pool allows overlapping clicks without rewinding an active sound.
   // Playback starts only inside trusted gestures. Ordinary page links allow a
   // bounded sound attack before unloading; failed audio releases them immediately.

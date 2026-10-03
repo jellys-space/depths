@@ -1493,6 +1493,11 @@ html[data-theme='light'] .copy-code-button:active { background: var(--button-gre
 .site-footer { margin-top: auto; border-top: 4px solid var(--border); box-shadow: 0 -3px 0 var(--bevel-dark); }
 .footer-shell { padding-bottom: max(.9rem, env(safe-area-inset-bottom)); }
 .footer-mini-nav a { display: inline-flex; align-items: center; min-height: 44px; }
+@media (min-width: 821px) {
+  html { scroll-padding-bottom: calc(var(--desktop-footer-height, 6rem) + 1rem); }
+  body:has(> .site-footer) { padding-bottom: var(--desktop-footer-height, 6rem); }
+  .site-footer { position: fixed; inset: auto 0 0; }
+}
 .not-found { padding-bottom: 3rem; }
 .not-found > div { padding: clamp(1rem, 4vw, 3rem); max-width: 700px; }
 :focus-visible { outline: 3px solid var(--cyan); outline-offset: 4px; }
