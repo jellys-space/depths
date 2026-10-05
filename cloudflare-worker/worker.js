@@ -42,7 +42,7 @@ async function readJson(request) {
     const bytes = new Uint8Array(total);
     let offset = 0;
     for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
-    return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+    return JSON.parse(new TextDecoder('utf-8', { fatal: true, ignoreBOM: false }).decode(bytes));
   } catch (error) {
     if (error.message === 'body_too_large') throw error;
     throw new Error('invalid_json');
