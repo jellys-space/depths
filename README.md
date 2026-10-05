@@ -4,9 +4,9 @@ Static HTML/CSS/JavaScript site for `https://depths.jellys-space.vip`, designed 
 
 ## Files you will edit most often
 
-- `index.html` — homepage copy, calls to action and slideshow markup.
+- `index.html` — homepage copy, calls to action, YouTube embed and slideshow markup.
 - `faq/index.html` — FAQ content (`/faq/`).
-- `guide/index.html` — guide content and ready-to-copy video embed markup (`/guide/`).
+- `guide/index.html` — installation instructions and screenshots (`/guide/`).
 - `request-access/index.html` — whitelist request form (`/request-access/`).
 - `discord-embed.json` — Discord Components V2 link preview.
 - `assets/css/site.css` — all site styling.
@@ -94,7 +94,9 @@ Navigation, game-style buttons, cards, guide/code panels and the application men
 
 ## Slideshow
 
-The twelve responsive screenshots retain their in-place crossfade and independent slow cinematic zoom. Each figure fills the 16:9 viewport with zero margin. Square previous/next controls, dots with 44px touch targets, left/right keyboard controls and swipes all use the same wraparound/manual navigation behaviour and restart autoplay. Reduced motion disables autoplay and the zoom's visible motion. Hover/focus pauses autoplay until manual navigation or leaving the gallery.
+The twelve responsive screenshots retain their in-place crossfade and independent slow cinematic zoom. Each figure fills the 16:9 viewport with zero margin. Square previous/next controls with at least 44px touch targets, left/right keyboard controls and swipes all use the same wraparound/manual navigation behaviour and restart autoplay. Reduced motion disables autoplay and the zoom's visible motion. Hover/focus pauses autoplay until manual navigation or leaving the gallery.
+
+The homepage embeds `5j0u4T3r1qU` from YouTube below the coming-soon text, in the same bevelled frame as the gallery. It is centered at up to 720px wide, uses a responsive player with a 200px minimum height, loads lazily from `youtube-nocookie.com`, and supports inline playback and fullscreen. The installation guide uses written steps and screenshots.
 
 ## UI sounds
 

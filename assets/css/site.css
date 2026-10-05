@@ -300,6 +300,7 @@ main {
 
 .hero-inner {
   width: min(calc(100% - 2rem), 920px);
+  min-width: 0;
   margin: 0 auto;
   text-align: center;
 }
@@ -562,37 +563,6 @@ main {
   }
 }
 
-.gallery-dots {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.65rem;
-  margin-top: 1rem;
-}
-
-.gallery-dot {
-  width: 11px;
-  height: 11px;
-  padding: 0;
-  border: 1px solid var(--border-strong);
-  border-radius: 0;
-  background: transparent;
-  cursor: pointer;
-  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
-}
-
-.gallery-dot:hover,
-.gallery-dot:focus-visible {
-  transform: scale(1.28);
-  border-color: var(--cyan);
-}
-
-.gallery-dot.is-active {
-  background: var(--blue);
-  border-color: var(--blue);
-  box-shadow: 0 0 14px rgba(115, 154, 75, 0.58);
-}
-
 .split-callout {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
@@ -695,39 +665,29 @@ main {
   color: var(--text);
 }
 
-.video-placeholder,
+.hero-video {
+  width: min(100%, 720px);
+  min-width: 0;
+  margin: 1.5rem auto 0;
+}
+
 .video-embed {
   position: relative;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   aspect-ratio: 16 / 9;
-  margin: 1.2rem 0 0;
+  min-height: 200px;
   overflow: hidden;
-  border: 1px solid var(--border-strong);
-  border-radius: 0;
-  background:
-    linear-gradient(135deg, rgba(115, 154, 75, 0.10), rgba(146, 112, 170, 0.08)),
-    var(--surface-solid);
+  background: #05090d;
 }
 
-.video-placeholder {
-  display: grid;
-  place-items: center;
-  padding: 2rem;
-  text-align: center;
-  color: var(--muted);
-}
-
-.video-placeholder span {
-  font-family: 'Minecraft', monospace;
-  color: var(--text);
-}
-
-.video-embed iframe,
-.video-embed video {
+.video-embed iframe {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   border: 0;
-  object-fit: cover;
 }
 
 .code-hint {
@@ -976,11 +936,6 @@ html[data-theme='light'] .code-hint {
     var(--surface);
 }
 
-.guide-video-section {
-  padding-top: 0 !important;
-}
-
-.guide-section-heading,
 .guide-step {
   scroll-margin-top: 96px;
 }
@@ -995,8 +950,7 @@ html[data-theme='light'] .code-hint {
   text-transform: uppercase;
 }
 
-.guide-step > h2,
-.guide-section-heading h2 {
+.guide-step > h2 {
   margin-top: 0;
 }
 
@@ -1460,16 +1414,10 @@ html[data-theme='light'] {
 }
 .gallery-arrow--previous { left: 8px; }
 .gallery-arrow--next { right: 8px; }
-.gallery-dots { gap: 0; margin-top: .5rem; }
-.gallery-dot { position: relative; width: 44px; height: 44px; border: 0; background: transparent; box-shadow: none; }
-.gallery-dot::before { content: ''; position: absolute; inset: 16px; background: var(--surface-solid); border: 2px solid var(--border-strong); }
-.gallery-dot.is-active { background: transparent; box-shadow: none; }
-.gallery-dot.is-active::before { background: var(--cyan); border-color: var(--cyan); }
-.gallery-dot:hover, .gallery-dot:focus-visible { transform: none; }
 .prose { padding: clamp(1rem, 3vw, 2.4rem); width: 100%; min-width: 0; }
 .edit-note, .guide-tip, .guide-warning, .guide-coming-soon, .access-status { border-width: 2px; background: var(--surface-solid); box-shadow: inset 2px 2px 0 var(--bevel-light); }
 .guide-warning { border-left: 5px solid var(--gold); }
-.guide-shot a, .copy-code-block, .video-embed, .video-placeholder { border-width: 3px; box-shadow: 3px 3px 0 var(--bevel-dark); }
+.guide-shot a, .copy-code-block { border-width: 3px; box-shadow: 3px 3px 0 var(--bevel-dark); }
 .copy-code-button { min-height: 44px; }
 html[data-theme='light'] .copy-code-button { background: var(--button-green); color: #fff9e4; }
 html[data-theme='light'] .copy-code-button:hover { background: var(--button-green-hover); }

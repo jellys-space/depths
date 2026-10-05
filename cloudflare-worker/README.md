@@ -4,9 +4,34 @@ The website remains static on GitHub Pages. This module Worker validates the for
 
 The shipped website still calls its existing Worker URL. Its obvious Turnstile placeholder keeps the old submission flow working. **The security overhaul takes effect only after the steps below. Do not replace the live Worker before the database, secrets, and public widget configuration are ready.**
 
+## Before you start
+
+Use the Cloudflare account containing your existing **`depths-whitelist`** Worker. The website currently sends applications to `https://depths-whitelist.sylviarose4ef.workers.dev/`; keep that address.
+
+You can do the Cloudflare setup entirely in the dashboard. You do not need to install Wrangler or move the website away from GitHub Pages. Follow sections 1–7 in order. The widget checks visitors; the Worker verifies the check; D1 remembers which Discord IDs and Minecraft names have already applied.
+
+| Item | Exact location | What goes there |
+| --- | --- | --- |
+| Public site key | `request-access/index.html`, `depths-turnstile-site-key` meta tag | Turnstile **Site key** |
+| Private secret | Existing Worker → Settings → Variables and Secrets | Secret named **`TURNSTILE_SECRET_KEY`** |
+| Discord webhook | Same Worker settings | Secret named **`DISCORD_WEBHOOK_URL`** |
+| Database connection | Existing Worker → Bindings | D1 binding named **`DB`**, selecting **`depths-access`** |
+
+Only the public site key belongs in the website. Never put either secret in the repository or send it in chat.
+
 ## 1. Create the production Turnstile widget
 
-In the [Cloudflare dashboard](https://dash.cloudflare.com/), select your account → **Turnstile → Add widget**. Name it `Depths Request Access`, add hostname **`depths.jellys-space.vip`** (without `https://` or a path), select **Managed**, and select **Create**. Pre-clearance is unnecessary here. Cloudflare shows two keys:
+1. Sign in to the [Cloudflare dashboard](https://dash.cloudflare.com/) and select the account containing `depths-whitelist`.
+2. Open **Turnstile** in the account navigation. Use the dashboard search if you cannot find it.
+3. Click **Add widget**.
+4. Enter **`Depths Request Access`** as the widget name.
+5. Under **Hostname management**, add **`depths.jellys-space.vip`**. Enter the hostname only: no `https://`, slash, or `/request-access/`.
+6. Set **Widget mode** to **Managed**.
+7. Leave **Pre-clearance** off; this form does not need it.
+8. Click **Create**.
+9. Keep the two keys available for the later steps. Store the secret privately, such as in your password manager. Do not paste it into a file in this repository.
+
+Cloudflare shows two keys:
 
 - **Site key:** public; safe to put in the website HTML.
 - **Secret key:** private; put it only in the Worker's encrypted secret settings. Never put it in HTML, JavaScript, Git, screenshots, or a shared document.
@@ -15,7 +40,15 @@ See [Cloudflare's widget instructions](https://developers.cloudflare.com/turnsti
 
 ## 2. Create D1 and apply the schema
 
-In your account's **Storage & databases → D1 SQL Database**, choose **Create database**, name it `depths-access`, and create it. Open the database → **Console**. Paste the complete contents of [`migrations/0001_submissions.sql`](migrations/0001_submissions.sql) and select **Execute**. The file creates one table with unique Discord ID and lowercase Minecraft name constraints. It has no expiry or scheduled deletion.
+1. In the same Cloudflare account, open **Storage & databases → D1 SQL Database**. Searching the navigation for **D1** also works.
+2. Click **Create database**.
+3. Enter **`depths-access`** as the database name, leave the optional location hint at its default, and click **Create**. If you already created this database for this site, open it instead.
+4. Open **`depths-access` → Console**.
+5. Open [`migrations/0001_submissions.sql`](migrations/0001_submissions.sql) in your local repository. Copy its entire contents, including the final semicolon.
+6. Paste it into the D1 console and click **Execute**. The SQL creates the `submissions` table and uniqueness constraints; it does not delete existing submissions.
+7. Confirm there is no SQL error. Open **Tables** and check that **`submissions`** appears. Its columns should include `discord_user_id`, `minecraft_username_normalized`, and `status`.
+
+The table has no expiry or scheduled deletion.
 
 If your dashboard groups products differently, search for **D1** in its navigation. [Cloudflare's D1 setup guide](https://developers.cloudflare.com/d1/get-started/) documents the current interface.
 
@@ -32,20 +65,33 @@ Replace every example value before executing; historical imports must reflect re
 
 ## 3. Bind D1 to the existing Worker
 
-Go to **Workers & Pages → your existing whitelist Worker → Bindings → Add binding → D1 database**. Set the variable name to **`DB`**, select `depths-access`, and add the binding. Keep the existing Worker's public URL. [D1 binding instructions](https://developers.cloudflare.com/d1/best-practices/remote-development/).
+1. Open **Workers & Pages** and select **`depths-whitelist`**. Use your existing Worker, not a new Worker or your GitHub Pages website.
+2. Open **Bindings** and click **Add binding**.
+3. Choose **D1 database**, then **Add binding** if prompted.
+4. For **Variable name**, enter **`DB`** exactly, in uppercase.
+5. In the database dropdown, choose **`depths-access`**.
+6. Click **Add binding** and save/deploy the configuration if prompted. Keep the old Worker code at this stage.
+7. Confirm the Bindings list shows **`DB` → `depths-access`**.
+
+Keep the existing Worker's public URL. [Cloudflare's D1 binding instructions](https://developers.cloudflare.com/d1/get-started/#3-bind-your-worker-to-your-d1-database).
 
 ## 4. Add the two encrypted secrets
 
-In that Worker's **Settings → Variables and Secrets → Add**, choose type **Secret**:
+1. Still inside **`depths-whitelist`**, open **Settings → Variables and Secrets**.
+2. Click **Add**.
+3. Set **Type** to **Secret**, not Text.
+4. Set **Variable name** to **`TURNSTILE_SECRET_KEY`** exactly.
+5. Set **Value** to the private **Secret key** from your production Turnstile widget. This is not the public site key.
+6. Save/deploy the settings as prompted, leaving the old Worker code in place.
+7. In the same list, check for **`DISCORD_WEBHOOK_URL`**. If it already exists as a secret, retain it. Cloudflare hiding its value is normal.
+8. If it is absent, click **Add**, choose **Secret**, enter **`DISCORD_WEBHOOK_URL`**, and paste the existing Discord webhook URL as its Value. Save/deploy the settings. The Worker adds `wait=true` itself.
+9. Confirm both secret names are listed. Neither value should be in `worker.js`, HTML, GitHub, or a screenshot.
 
-1. **`DISCORD_WEBHOOK_URL`**: your existing Discord webhook URL. Retain the existing secret if already present; do not copy it into the repository. The Worker adds `wait=true` itself.
-2. **`TURNSTILE_SECRET_KEY`**: the private secret from step 1.
-
-Save/deploy these settings while retaining the old code. [Cloudflare's secret instructions](https://developers.cloudflare.com/workers/configuration/secrets/).
+[Cloudflare's secret instructions](https://developers.cloudflare.com/workers/configuration/secrets/).
 
 ## 5. Optional plaintext configuration
 
-Defaults are sufficient for production. Under the same settings, **Text** variables may override:
+**For the normal production setup, skip this section.** The code already supplies the correct defaults. If you previously added variables with these names, check that they match the production values below; do not leave staging/test values on the production Worker. Under the same settings, **Text** variables may override:
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
@@ -57,21 +103,50 @@ The health check accepts GET without an Origin. Submission POSTs require an allo
 
 ## 6. Publish the public site key first
 
-Edit **`request-access/index.html`** and replace only the `content` value in:
+1. Open **`request-access/index.html`** in your local repository (the file inside the `request-access` folder, not the root homepage).
+2. Near the top, find this exact line:
 
 ```html
 <meta name="depths-turnstile-site-key" content="REPLACE_WITH_PUBLIC_TURNSTILE_SITE_KEY">
 ```
 
-Use your **public site key** from step 1. Commit/push that website edit and wait for GitHub Pages to publish. Keep `depths-access-endpoint` unchanged. Confirm the live page displays a working widget and the browser sends a `turnstileToken` field. Do not send a test application to the production webhook merely to check the widget.
+3. Replace only **`REPLACE_WITH_PUBLIC_TURNSTILE_SITE_KEY`** with the widget's **Site key**. Keep the quotes, the `name`, and the rest of the tag. Do not paste the Secret key here.
+4. Save the file. Keep the nearby **`depths-access-endpoint`** value unchanged.
+5. Publish this website edit to the existing repository's `main` branch. If using GitHub in the browser, open [`request-access/index.html`](https://github.com/jellys-space/depths/blob/main/request-access/index.html), click the pencil/Edit button, replace the same placeholder, and **Commit changes** to `main`. If using local Git, commit and push only this file.
+6. In the GitHub repository's **Actions** tab, wait for the Pages build/deployment for that commit to finish successfully.
+7. Open [the live Request Access page](https://depths.jellys-space.vip/request-access/) and reload it. The Turnstile widget should load near Submit Request and complete verification. Do not submit a dummy request to the production Discord channel just to check the widget.
+
+The antispam protection is not active merely because the widget appears. Server verification starts when you deploy the new Worker in section 7. If editing through GitHub, pull that commit into your local checkout before making further site changes.
 
 The old Worker remains active during this stage; it must tolerate the extra JSON field. Its manually managed source is not in this repository, so check that it validates the named application fields without rejecting unknown fields. If it rejects extra fields, first adjust that old parser to ignore `turnstileToken`, retaining its existing behaviour until the migration. The placeholder version of the site can already be deployed safely with no Cloudflare changes.
 
 ## 7. Replace the live Worker only now
 
-Save a private copy of the old dashboard code for rollback. Once steps 1–6 are complete, open the **same Worker → Edit Code**. Replace its entry module with all of [`worker.js`](worker.js), save, and **Deploy**. It uses `export default` module syntax; there are no imports to install. Verify the `DB` binding and both secrets are still present. GET its existing URL to confirm JSON health (`ok: true`).
+1. In **Workers & Pages → `depths-whitelist`**, click **Edit Code**.
+2. Save a private backup of the old dashboard code outside this repository in case it contains secrets.
+3. Open the local [`worker.js`](worker.js) in this folder and copy the complete file.
+4. In the dashboard editor, select the existing JavaScript entry file used by this Worker (usually `worker.js` or `index.js`). Replace its contents with the copied code, not with this README or the SQL file.
+5. Click **Deploy** and wait for success. The file uses `export default` module syntax and needs no package installation.
+6. Return to **Bindings** and confirm **`DB` → `depths-access`** remains. In **Settings → Variables and Secrets**, confirm **`TURNSTILE_SECRET_KEY`** and **`DISCORD_WEBHOOK_URL`** remain.
+7. Open the [existing Worker URL](https://depths-whitelist.sylviarose4ef.workers.dev/) in a browser tab. It should show:
+
+```json
+{"ok":true,"service":"depths-access"}
+```
+
+This confirms the new code is responding. GET health does not test the secret keys, D1 schema, or Discord delivery. Use the staging checks below for a full dry run. For the next genuine production application, confirm the Discord embed arrives once and its D1 row becomes `delivered`. That Discord ID and Minecraft name then remain blocked until an administrator deliberately removes the record.
 
 Current pages with the new public key now send verified tokens to the new Worker. Visitors who kept an older tab open before step 6 may need to reload; missing tokens fail closed. Do not disable server verification to accommodate stale tabs. If you roll back, understand that the old Worker does not enforce permanent D1 uniqueness; record any submissions during that interval before migrating again.
+
+### If something does not work
+
+| Symptom | Check |
+| --- | --- |
+| No widget appears | Check the live page's site-key meta tag. It must contain the public Site key, not `REPLACE_WITH_PUBLIC_TURNSTILE_SITE_KEY`. Wait for Pages deployment and reload. |
+| Widget reports an invalid site key/domain | Use the production Site key and make sure the widget permits `depths.jellys-space.vip`, without a URL scheme or path. |
+| Verification fails after the widget succeeds | Check that the Worker has the matching Secret key. Production hostname must be `depths.jellys-space.vip` and action `request_access`; remove unintended test overrides. Refresh expired verification and try again. |
+| Submissions are temporarily unavailable | Check both encrypted secret names, the `DB` binding, and the `submissions` table. Look at the Worker's logs for configuration/database failures. Do not paste secrets into logs or code. |
+| A request is already submitted | D1 has reserved one of the supplied identities. Read the administrator recovery section before deleting anything. Clearing browser data will not free it. |
 
 ## 8. Verify safely with a staging Worker
 
