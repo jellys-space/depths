@@ -2,7 +2,9 @@
 
 The website remains static on GitHub Pages. This module Worker validates the form, verifies Turnstile, atomically reserves identities in D1, and sends one Discord embed. The webhook and Turnstile secret live only in Cloudflare.
 
-The shipped website still calls its existing Worker URL. Its obvious Turnstile placeholder keeps the old submission flow working. **The security overhaul takes effect only after the steps below. Do not replace the live Worker before the database, secrets, and public widget configuration are ready.**
+Production setup was completed on 5 October 2026. The website uses the production Turnstile site key, and the existing `depths-whitelist` Worker now verifies tokens and reserves identities in `depths-access` through its `DB` binding. Both private keys are encrypted Cloudflare secrets. The live widget completed verification and the deployed Worker returned the expected health response; all 21 offline regression tests passed. Discord delivery still needs confirmation with the next genuine application.
+
+The instructions below document the setup for maintenance or recreation. **Do not replace a live Worker before its database, secrets, and public widget configuration are ready.**
 
 ## Before you start
 
@@ -104,21 +106,21 @@ The health check accepts GET without an Origin. Submission POSTs require an allo
 ## 6. Publish the public site key first
 
 1. Open **`request-access/index.html`** in your local repository (the file inside the `request-access` folder, not the root homepage).
-2. Near the top, find this exact line:
+2. Near the top, find the `depths-turnstile-site-key` meta tag. The current production value is:
 
 ```html
-<meta name="depths-turnstile-site-key" content="REPLACE_WITH_PUBLIC_TURNSTILE_SITE_KEY">
+<meta name="depths-turnstile-site-key" content="0x4AAAAAAFOlSrtjDhA348ix">
 ```
 
-3. Replace only **`REPLACE_WITH_PUBLIC_TURNSTILE_SITE_KEY`** with the widget's **Site key**. Keep the quotes, the `name`, and the rest of the tag. Do not paste the Secret key here.
+3. If using the existing widget, keep that value. If you created a replacement widget, replace only the `content` value with its **Site key**. Keep the quotes, the `name`, and the rest of the tag. Do not paste the Secret key here.
 4. Save the file. Keep the nearby **`depths-access-endpoint`** value unchanged.
-5. Publish this website edit to the existing repository's `main` branch. If using GitHub in the browser, open [`request-access/index.html`](https://github.com/jellys-space/depths/blob/main/request-access/index.html), click the pencil/Edit button, replace the same placeholder, and **Commit changes** to `main`. If using local Git, commit and push only this file.
+5. If the key changed, publish this website edit to the existing repository's `main` branch. If using GitHub in the browser, open [`request-access/index.html`](https://github.com/jellys-space/depths/blob/main/request-access/index.html), click the pencil/Edit button, replace the same `content` value, and **Commit changes** to `main`. If using local Git, commit and push only this file.
 6. In the GitHub repository's **Actions** tab, wait for the Pages build/deployment for that commit to finish successfully.
 7. Open [the live Request Access page](https://depths.jellys-space.vip/request-access/) and reload it. The Turnstile widget should load near Submit Request and complete verification. Do not submit a dummy request to the production Discord channel just to check the widget.
 
 The antispam protection is not active merely because the widget appears. Server verification starts when you deploy the new Worker in section 7. If editing through GitHub, pull that commit into your local checkout before making further site changes.
 
-The old Worker remains active during this stage; it must tolerate the extra JSON field. Its manually managed source is not in this repository, so check that it validates the named application fields without rejecting unknown fields. If it rejects extra fields, first adjust that old parser to ignore `turnstileToken`, retaining its existing behaviour until the migration. The placeholder version of the site can already be deployed safely with no Cloudflare changes.
+When migrating an older Worker, keep it active during this stage and check that it tolerates the extra `turnstileToken` JSON field. If it rejects unknown fields, first adjust its parser to ignore `turnstileToken`, retaining its existing behaviour until the migration. Production has already completed this migration.
 
 ## 7. Replace the live Worker only now
 
