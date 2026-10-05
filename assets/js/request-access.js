@@ -133,7 +133,11 @@
     } catch (error) {
       const messages = {
         already_submitted: 'A whitelist request has already been submitted for that Discord account or Minecraft username.',
+        not_configured: 'The request system has a server configuration problem. Please contact staff through Discord; changing your browser or VPN will not fix it.',
+        storage_unavailable: 'The request database is temporarily unavailable. Please try again later or contact staff through Discord.',
+        verification_unavailable: 'The verification service is temporarily unavailable. Please wait a moment, then complete verification again and retry.',
         verification_failed: 'The verification expired or could not be confirmed. Please complete it again and retry.',
+        delivery_failed: 'Your request could not be delivered to Discord. Please try again later or contact staff through Discord.',
         delivery_uncertain: 'Your request may have reached staff. Please contact us through Discord before trying again so we can check it.'
       };
       showStatus(messages[error.code] || 'We could not send your request right now. Please try again in a moment, or contact us through the Jelly’s Space Discord.', 'error');

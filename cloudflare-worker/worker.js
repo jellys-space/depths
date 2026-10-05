@@ -2,6 +2,7 @@
 const DEFAULT_ORIGINS = ['https://depths.jellys-space.vip', 'http://localhost:8000', 'http://127.0.0.1:8000'];
 const MAX_BODY_BYTES = 4096;
 const DEFINITE_REJECTIONS = new Set([400, 401, 403, 404, 405, 413, 415, 429]);
+const DISCORD_WEBHOOK_HOSTS = new Set(['discord.com', 'discordapp.com', 'canary.discord.com', 'ptb.discord.com', 'canary.discordapp.com', 'ptb.discordapp.com']);
 
 function list(value, defaults) {
   return value ? value.split(',').map((item) => item.trim()).filter(Boolean) : defaults;
@@ -20,6 +21,23 @@ export function validateFields(body) {
 
 function safeDiscordText(value) {
   return value.replace(/@/g, '＠').replace(/([\\`*_~|<>])/g, '\\$1');
+}
+
+function configuredWebhook(env) {
+  if (typeof env.DISCORD_WEBHOOK_URL !== 'string' || !env.DISCORD_WEBHOOK_URL.trim()) throw new Error('webhook_missing');
+  let webhook;
+  try { webhook = new URL(env.DISCORD_WEBHOOK_URL); }
+  catch (_) { throw new Error('webhook_url'); }
+  if (webhook.protocol !== 'https:' || webhook.port || webhook.username || webhook.password) throw new Error('webhook_protocol');
+  if (!DISCORD_WEBHOOK_HOSTS.has(webhook.hostname)) throw new Error('webhook_host');
+  if (!/^\/api(?:\/v\d+)?\/webhooks\/\d+\/[^/]+$/.test(webhook.pathname)) throw new Error('webhook_path');
+  if (!env.DB || typeof env.DB.prepare !== 'function') throw new Error('database_binding');
+  if (typeof env.TURNSTILE_SECRET_KEY !== 'string' || !env.TURNSTILE_SECRET_KEY.trim()) throw new Error('turnstile_secret');
+  // URLs copied from Canary/PTB use those hosts; execute on the canonical API.
+  webhook.hostname = 'discord.com';
+  try { webhook.searchParams.set('wait', 'true'); }
+  catch (_) { throw new Error('webhook_query'); }
+  return webhook;
 }
 
 async function readJson(request) {
@@ -67,7 +85,14 @@ export default {
     });
     const fail = (status, code, error) => respond(status, { ok: false, code, error });
     if (origin && !originAllowed) return fail(403, 'origin_forbidden', 'Origin is not allowed.');
-    if (request.method === 'GET') return respond(200, { ok: true, service: 'depths-access' });
+    if (request.method === 'GET') {
+      try { configuredWebhook(env); }
+      catch (error) {
+        console.error('access: configuration check failed', { reason: error.message });
+        return fail(503, 'not_configured', 'Submissions are temporarily unavailable.');
+      }
+      return respond(200, { ok: true, service: 'depths-access' });
+    }
     if (!originAllowed) return fail(403, 'origin_forbidden', 'An allowed Origin is required.');
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: { ...cors, Vary: 'Origin' } });
     if (request.method !== 'POST') return fail(405, 'method_not_allowed', 'Use POST for submissions.');
@@ -89,32 +114,44 @@ export default {
 
     let webhook;
     try {
-      webhook = new URL(env.DISCORD_WEBHOOK_URL);
-      if (webhook.protocol !== 'https:' || webhook.port || webhook.username || webhook.password ||
-          !['discord.com', 'discordapp.com'].includes(webhook.hostname) ||
-          !/^\/api(?:\/v\d+)?\/webhooks\/\d+\/[^/]+$/.test(webhook.pathname)) throw new Error();
-      webhook.searchParams.set('wait', 'true');
-      if (!env.DB || !env.TURNSTILE_SECRET_KEY) throw new Error();
-    } catch (_) {
-      console.error('access: missing or invalid configuration');
+      webhook = configuredWebhook(env);
+    } catch (error) {
+      console.error('access: configuration check failed', { reason: error.message });
       return fail(503, 'not_configured', 'Submissions are temporarily unavailable.');
     }
 
+    let verificationStage = 'fetch';
+    let verificationStatus;
     try {
       const verification = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ secret: env.TURNSTILE_SECRET_KEY, response: body.turnstileToken }),
-        signal: AbortSignal.timeout(10000), redirect: 'error'
+        // workerd supports follow/manual; manual also keeps secrets off redirects.
+        signal: AbortSignal.timeout(10000), redirect: 'manual'
       });
-      if (!verification.ok) throw new Error();
+      verificationStatus = verification.status;
+      verificationStage = 'json';
       const result = await verification.json();
+      const knownCodes = new Set(['missing-input-secret', 'invalid-input-secret', 'missing-input-response', 'invalid-input-response', 'bad-request', 'timeout-or-duplicate', 'internal-error']);
+      const codes = Array.isArray(result['error-codes']) ? result['error-codes'].filter(code => knownCodes.has(code)) : [];
+      if (codes.includes('missing-input-secret') || codes.includes('invalid-input-secret')) {
+        console.error('access: Turnstile secret rejected', { status: verificationStatus, codes });
+        return fail(503, 'not_configured', 'Submissions are temporarily unavailable.');
+      }
+      if (codes.includes('internal-error') || (verification.status >= 300 && verification.status < 400) || verification.status >= 500) {
+        console.error('access: verification service error', { status: verificationStatus, codes });
+        return fail(503, 'verification_unavailable', 'Verification is temporarily unavailable.');
+      }
       const hostnames = list(env.TURNSTILE_HOSTNAMES, ['depths.jellys-space.vip']);
       const action = env.TURNSTILE_ACTION || 'request_access';
-      if (result.success !== true || !hostnames.includes(result.hostname) || result.action !== action) {
+      if (!verification.ok || result.success !== true || !hostnames.includes(result.hostname) || result.action !== action) {
+        console.warn('access: verification rejected', { status: verificationStatus, codes,
+          hostnameMatched: hostnames.includes(result.hostname), actionMatched: result.action === action });
         return fail(400, 'verification_failed', 'Verification could not be confirmed.');
       }
-    } catch (_) {
-      console.error('access: verification service unavailable');
+    } catch (error) {
+      const errorType = ['TypeError', 'SyntaxError', 'AbortError', 'TimeoutError'].includes(error?.name) ? error.name : 'Error';
+      console.error('access: verification service unavailable', { stage: verificationStage, status: verificationStatus, errorType });
       return fail(503, 'verification_unavailable', 'Verification is temporarily unavailable.');
     }
 
@@ -150,7 +187,7 @@ export default {
               { name: 'Discord UserID', value: `<@${fields.discordUserId}>`, inline: false },
               { name: 'Minecraft Username', value: safeDiscordText(fields.minecraftUsername), inline: false }
             ], timestamp: new Date().toISOString() }]
-        }), signal: AbortSignal.timeout(10000), redirect: 'error'
+        }), signal: AbortSignal.timeout(10000), redirect: 'manual'
       });
     } catch (_) {
       // A timeout/disconnect may occur AFTER Discord accepts the message.

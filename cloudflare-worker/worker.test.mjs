@@ -21,13 +21,16 @@ function fixture(options = {}) {
   // All external HTTP is intercepted. No production secrets or network calls.
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (url, init) => {
+    assert.equal(init.redirect, 'manual', 'both external calls must refuse to follow redirects in workerd');
     if (String(url).includes('/siteverify')) {
       calls.verify++;
       if (options.verifyThrows) throw new Error('verification unavailable');
       assert.equal(JSON.parse(init.body).response, 'test-token');
-      return Response.json({ success: !options.verifyFails, hostname: options.hostname || 'depths.jellys-space.vip', action: options.action || 'request_access' });
+      if (options.verifyJsonInvalid) return new Response('<html>upstream unavailable</html>', { status: options.verifyStatus || 502 });
+      return Response.json({ success: !options.verifyFails, hostname: options.hostname || 'depths.jellys-space.vip', action: options.action || 'request_access', 'error-codes': options.verifyCodes || [] }, { status: options.verifyStatus || 200 });
     }
     assert.equal(new URL(url).searchParams.get('wait'), 'true');
+    assert.equal(new URL(url).hostname, 'discord.com');
     calls.discord++;
     const body = JSON.parse(init.body);
     assert.deepEqual(body.allowed_mentions.parse, []);
@@ -104,7 +107,7 @@ for (const status of [400, 401, 403, 404, 429]) {
   });
 }
 
-for (const options of [{ discordStatus: 500 }, { discordThrows: true }, { updateFails: true }]) {
+for (const options of [{ discordStatus: 500 }, { discordStatus: 302 }, { discordThrows: true }, { updateFails: true }]) {
   test(`uncertainty or delivered-status write failure retains identities: ${JSON.stringify(options)}`, async () => {
     const f = fixture(options);
     try {
@@ -135,6 +138,29 @@ test('failed reservation cleanup keeps the identity for administrator review', a
     assert.equal(f.rows().length, 1);
   } finally { f.close(); }
 });
+
+for (const [options, status, code] of [
+  [{ verifyFails: true, verifyStatus: 400, verifyCodes: ['invalid-input-response'] }, 400, 'verification_failed'],
+  [{ verifyFails: true, verifyCodes: ['timeout-or-duplicate'] }, 400, 'verification_failed'],
+  [{ verifyFails: true, verifyStatus: 400, verifyCodes: ['invalid-input-secret'] }, 503, 'not_configured'],
+  [{ verifyFails: true, verifyCodes: ['missing-input-secret'] }, 503, 'not_configured'],
+  [{ verifyFails: true, verifyCodes: ['internal-error'] }, 503, 'verification_unavailable'],
+  [{ verifyStatus: 503 }, 503, 'verification_unavailable'],
+  [{ verifyStatus: 302 }, 503, 'verification_unavailable'],
+  [{ verifyJsonInvalid: true }, 503, 'verification_unavailable']
+]) {
+  test(`Turnstile failure reports ${code} and never reserves or delivers: ${JSON.stringify(options)}`, async () => {
+    const f = fixture(options);
+    try {
+      const response = await f.submit();
+      assert.equal(response.status, status);
+      assert.equal((await response.json()).code, code);
+      assert.equal(f.calls.verify, 1);
+      assert.equal(f.calls.discord, 0);
+      assert.equal(f.rows().length, 0);
+    } finally { f.close(); }
+  });
+}
 
 test('CORS, health, preflight, methods, JSON, size, honeypot and tokens', async () => {
   const f = fixture();
@@ -175,5 +201,52 @@ test('origin override is an exact comma-separated allowlist', async () => {
   try {
     f.env.ALLOWED_ORIGINS = 'https://other.test';
     assert.equal((await f.submit()).status, 403);
+  } finally { f.close(); }
+});
+
+test('health detects invalid runtime configuration without verification, D1 writes or Discord delivery', async () => {
+  const f = fixture();
+  const errors = [];
+  const originalError = console.error;
+  console.error = (...args) => errors.push(args);
+  try {
+    const cases = [
+      [{ DISCORD_WEBHOOK_URL: undefined }, 'webhook_missing'],
+      [{ DISCORD_WEBHOOK_URL: 'invalid' }, 'webhook_url'],
+      [{ DISCORD_WEBHOOK_URL: 'http://discord.com/api/webhooks/123/SECRET_ONLY' }, 'webhook_protocol'],
+      [{ DISCORD_WEBHOOK_URL: 'https://attacker.test/api/webhooks/123/SECRET_ONLY' }, 'webhook_host'],
+      [{ DISCORD_WEBHOOK_URL: 'https://discord.com/wrong/SECRET_ONLY' }, 'webhook_path'],
+      [{ DB: undefined }, 'database_binding'],
+      [{ TURNSTILE_SECRET_KEY: '' }, 'turnstile_secret']
+    ];
+    for (const [patch, reason] of cases) {
+      const response = await worker.fetch(new Request('https://worker.test/'), { ...f.env, ...patch });
+      assert.equal(response.status, 503);
+      assert.equal((await response.json()).code, 'not_configured');
+      assert.equal(errors.at(-1)[1].reason, reason);
+    }
+    assert.ok(!JSON.stringify(errors).includes('SECRET_ONLY'));
+    assert.equal(f.calls.verify, 0);
+    assert.equal(f.calls.discord, 0);
+    assert.equal(f.rows().length, 0);
+  } finally { console.error = originalError; f.close(); }
+});
+
+test('Discord client webhook hosts are accepted and normalized; lookalike hosts remain blocked', async () => {
+  const f = fixture();
+  try {
+    for (const hostname of ['discord.com', 'discordapp.com', 'canary.discord.com', 'ptb.discord.com', 'canary.discordapp.com', 'ptb.discordapp.com']) {
+      f.env.DISCORD_WEBHOOK_URL = `https://${hostname}/api/v10/webhooks/123/TEST_ONLY?thread_id=456`;
+      const health = await worker.fetch(new Request('https://worker.test/'), f.env);
+      assert.equal(health.status, 200, hostname);
+      assert.equal((await f.submit()).status, 200, hostname);
+      await f.env.DB.prepare('DELETE FROM submissions WHERE discord_user_id = ?').bind(applicant.discordUserId).run();
+    }
+    assert.equal(f.calls.discord, 6);
+    for (const hostname of ['discord.com.attacker.test', 'canary.discord.com.attacker.test', 'attackerdiscord.com', 'untrusted.discord.com']) {
+      f.env.DISCORD_WEBHOOK_URL = `https://${hostname}/api/webhooks/123/TEST_ONLY`;
+      assert.equal((await worker.fetch(new Request('https://worker.test/'), f.env)).status, 503, hostname);
+    }
+    assert.equal(f.calls.discord, 6);
   } finally { f.close(); }
 });

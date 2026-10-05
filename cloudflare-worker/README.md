@@ -2,7 +2,9 @@
 
 The website remains static on GitHub Pages. This module Worker validates the form, verifies Turnstile, atomically reserves identities in D1, and sends one Discord embed. The webhook and Turnstile secret live only in Cloudflare.
 
-Production setup was completed on 5 October 2026. The website uses the production Turnstile site key, and the existing `depths-whitelist` Worker now verifies tokens and reserves identities in `depths-access` through its `DB` binding. Both private keys are encrypted Cloudflare secrets. The live widget completed verification and the deployed Worker returned the expected health response; all 21 offline regression tests passed. Discord delivery still needs confirmation with the next genuine application.
+Production setup was completed on 5 October 2026. The website uses the production Turnstile site key, and the existing `depths-whitelist` Worker verifies tokens and reserves identities in `depths-access` through its `DB` binding. Both private keys are encrypted Cloudflare secrets. The deployed Worker accepts the saved configuration and a deliberately invalid live token returns `verification_failed`; all 32 offline regression tests passed. The owner confirmed a live submission showed “Request sent” and arrived in Discord after the repair.
+
+The production repair accepts webhook URLs copied from Discord's Canary/PTB clients and executes them on `discord.com`. Both external requests use `redirect: 'manual'`: Cloudflare's [workerd implementation](https://github.com/cloudflare/workerd/blob/main/src/workerd/api/http.c%2B%2B) rejects `redirect: 'error'`. Redirects are never followed. Verification diagnostics log only fixed configuration reasons, known Turnstile error codes, HTTP status and match booleans, never secrets, tokens or applicant details.
 
 The instructions below document the setup for maintenance or recreation. **Do not replace a live Worker before its database, secrets, and public widget configuration are ready.**
 
@@ -136,7 +138,7 @@ When migrating an older Worker, keep it active during this stage and check that 
 {"ok":true,"service":"depths-access"}
 ```
 
-This confirms the new code is responding. GET health does not test the secret keys, D1 schema, or Discord delivery. Use the staging checks below for a full dry run. For the next genuine production application, confirm the Discord embed arrives once and its D1 row becomes `delivered`. That Discord ID and Minecraft name then remain blocked until an administrator deliberately removes the record.
+This confirms the code is responding and the required configuration has an accepted format: the webhook URL, nonempty Turnstile secret and `DB.prepare` binding. It does not verify the secret with Turnstile, query the D1 schema, or contact Discord. Use the staging checks below for a full dry run. For the next genuine production application, confirm the Discord embed arrives once and its D1 row becomes `delivered`. That Discord ID and Minecraft name then remain blocked until an administrator deliberately removes the record.
 
 Current pages with the new public key now send verified tokens to the new Worker. Visitors who kept an older tab open before step 6 may need to reload; missing tokens fail closed. Do not disable server verification to accommodate stale tabs. If you roll back, understand that the old Worker does not enforce permanent D1 uniqueness; record any submissions during that interval before migrating again.
 
@@ -148,6 +150,7 @@ Current pages with the new public key now send verified tokens to the new Worker
 | Widget reports an invalid site key/domain | Use the production Site key and make sure the widget permits `depths.jellys-space.vip`, without a URL scheme or path. |
 | Verification fails after the widget succeeds | Check that the Worker has the matching Secret key. Production hostname must be `depths.jellys-space.vip` and action `request_access`; remove unintended test overrides. Refresh expired verification and try again. |
 | Submissions are temporarily unavailable | Check both encrypted secret names, the `DB` binding, and the `submissions` table. Look at the Worker's logs for configuration/database failures. Do not paste secrets into logs or code. |
+| Verification service is unavailable | In Worker logs, inspect the sanitized verification event. `fetch` means the external request failed; `json` means its response could not be decoded. Use `redirect: 'manual'`, as in the current source. `invalid-input-secret` identifies the wrong private key; `internal-error` or upstream 5xx identifies a service error. |
 | A request is already submitted | D1 has reserved one of the supplied identities. Read the administrator recovery section before deleting anything. Clearing browser data will not free it. |
 
 ## 8. Verify safely with a staging Worker
@@ -180,7 +183,7 @@ Run the offline regression tests with **Node 22.13+ or Node 24+** from the repos
 node --test cloudflare-worker/worker.test.mjs
 ```
 
-Tests use in-memory SQLite with the actual migration and a small D1-shaped adapter. They verify concurrency/constraints, request validation, CORS, mentions, verification, rollback and uncertain deliveries. They do not substitute for checking the actual Cloudflare bindings in staging.
+The 32 tests use in-memory SQLite with the actual migration and a small D1-shaped adapter. They verify concurrency/constraints, request validation, CORS, mentions, verification error responses, webhook client hosts, configuration health, redirects, rollback and uncertain deliveries. They do not substitute for checking the actual Cloudflare runtime and bindings in staging.
 
 ## Delivery states and administrator recovery
 
